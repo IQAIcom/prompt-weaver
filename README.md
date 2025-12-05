@@ -6,7 +6,7 @@ A powerful, extensible template engine for building prompts. Prompt Weaver provi
 
 </div>
 
-## Features
+## ✨ Features
 
 - 🎯 **Extensible Plugin System** - Register custom transformers and helpers
 - 🔧 **Rich Built-in Transformers** - String, date, object, collection, and conditional helpers
@@ -15,7 +15,7 @@ A powerful, extensible template engine for building prompts. Prompt Weaver provi
 - 📝 **Template Composition** - Compose multiple templates together
 - 🎨 **TypeScript Support** - Full type safety with generics
 
-## Installation
+## 📦 Installation
 
 ```bash
 npm install @iqai/prompt-weaver
@@ -25,9 +25,88 @@ pnpm add @iqai/prompt-weaver
 yarn add @iqai/prompt-weaver
 ```
 
-## Quick Start
+## 🚀 Quick Start
 
-### Understanding Builder vs Weaver
+### A Quick Taste: Complex Prompt Example
+
+Here's a short but powerful example showcasing Prompt Weaver's capabilities:
+
+```typescript
+import { PromptWeaver } from "@iqai/prompt-weaver";
+
+const template = `
+You are an AI assistant helping {{userName}} with their {{taskType}}.
+
+## Account Summary
+- **Balance**: {{balance currency}}
+- **Member Since**: {{memberSince formatDate "MMMM YYYY"}}
+- **Status**: {{#if isPremium}}⭐ Premium{{else}}Standard{{/if}}
+
+## Task Details
+{{#if hasDeadline}}
+⚠️ **Deadline**: {{deadline relativeTime}} ({{deadline formatDate "MMM DD, YYYY"}})
+{{/if}}
+
+## Requirements
+{{#each requirements}}
+{{increment @index}}. {{this}}
+{{/each}}
+
+{{#if notes}}
+## Additional Notes
+{{notes ellipsis 200}}
+{{/if}}
+`;
+
+const weaver = new PromptWeaver(template);
+const output = weaver.format({
+  userName: "Alice",
+  taskType: "project planning",
+  balance: 1234.56,
+  memberSince: new Date("2023-06-15"),
+  isPremium: true,
+  hasDeadline: true,
+  deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days from now
+  requirements: [
+    "Create detailed project timeline",
+    "Identify potential risks",
+    "Estimate resource requirements"
+  ],
+  notes: "This is a high-priority project that requires careful attention to detail and stakeholder communication."
+});
+
+console.log(output);
+```
+
+**Output:**
+```
+You are an AI assistant helping Alice with their project planning.
+
+## Account Summary
+- **Balance**: $1,234.56
+- **Member Since**: June 2023
+- **Status**: ⭐ Premium
+
+## Task Details
+⚠️ **Deadline**: in 7 days (Dec 15, 2024)
+
+## Requirements
+1. Create detailed project timeline
+2. Identify potential risks
+3. Estimate resource requirements
+
+## Additional Notes
+This is a high-priority project that requires careful attention to detail and stakeholder communication.
+```
+
+This example demonstrates:
+- ✨ Variable interpolation with transformers (`currency`, `formatDate`, `relativeTime`, `ellipsis`)
+- 🔀 Conditional blocks (`{{#if}}`)
+- 🔁 Loops with indexing (`{{#each}}` with `{{increment @index}}`)
+- 📅 Date formatting and relative time
+- 💰 Number formatting
+
+### 🔄 Understanding Builder vs Weaver
 
 **PromptWeaver** is a template engine that renders Handlebars templates with data:
 - Use when you have template strings with variables (`{{variable}}`)
@@ -56,7 +135,7 @@ const output = weaver.format({
 });
 ```
 
-### Basic Usage with PromptWeaver
+### 📝 Basic Usage with PromptWeaver
 
 ```typescript
 import { PromptWeaver } from "@iqai/prompt-weaver";
@@ -73,7 +152,7 @@ console.log(output);
 // "Hello, Alice! Your balance is $1,234.56."
 ```
 
-### Basic Usage with PromptBuilder
+### 🏗️ Basic Usage with PromptBuilder
 
 ```typescript
 import { PromptBuilder } from "@iqai/prompt-weaver";
@@ -94,7 +173,7 @@ const output = weaver.format({
 });
 ```
 
-### With TypeScript Types
+### 🔷 With TypeScript Types
 
 ```typescript
 interface UserData {
@@ -109,7 +188,7 @@ const output = weaver.format({
 });
 ```
 
-## Core API
+## 🔧 Core API
 
 ### PromptWeaver Class
 
@@ -182,7 +261,7 @@ const composed = PromptWeaver.compose([template1, template2], "\n\n");
 const weaver = new PromptWeaver(composed);
 ```
 
-## Using Builder and Weaver Together
+## 🤝 Using Builder and Weaver Together
 
 The Builder and Weaver are designed to work seamlessly together. Here's a complete workflow:
 
@@ -231,7 +310,7 @@ if (!validation.valid) {
 
 *Weaver supports conditionals via Handlebars `{{#if}}` blocks, but Builder's conditional() is better for code-based logic
 
-## Built-in Transformers
+## 🎨 Built-in Transformers
 
 ### Formatters
 
@@ -253,7 +332,7 @@ Format values for display:
 {{data json}}            <!-- JSON string -->
 ```
 
-### String Transformers
+### 📝 String Transformers
 
 ```handlebars
 {{text replace "old" "new"}}           <!-- Replace text -->
@@ -275,7 +354,7 @@ Format values for display:
 {{text ellipsis 50}}                  <!-- Truncate with ellipsis -->
 ```
 
-### Date/Time Transformers
+### 📅 Date/Time Transformers
 
 ```handlebars
 {{date formatDate "YYYY-MM-DD"}}      <!-- Format date -->
@@ -292,7 +371,7 @@ Format values for display:
 {{date unixTimestamp}}                <!-- Unix timestamp -->
 ```
 
-### Object Transformers
+### 📦 Object Transformers
 
 ```handlebars
 {{get obj "key"}}                     <!-- Get property -->
@@ -308,7 +387,7 @@ Format values for display:
 {{isNotEmpty value}}                 <!-- Check if not empty -->
 ```
 
-### Collection Transformers
+### 📊 Collection Transformers
 
 ```handlebars
 {{filter array "property"}}           <!-- Filter array -->
@@ -329,7 +408,7 @@ Format values for display:
 {{arraySlice array 0 5}}              <!-- Slice array -->
 ```
 
-### Conditional Transformers
+### 🔀 Conditional Transformers
 
 ```handlebars
 {{#if condition}}
@@ -347,7 +426,7 @@ Format values for display:
 {{isDefined value}}                  <!-- Check defined -->
 ```
 
-### Arithmetic Transformers
+### ➕ Arithmetic Transformers
 
 ```handlebars
 {{increment value}}                   <!-- Add 1 -->
@@ -357,7 +436,7 @@ Format values for display:
 {{divide a b}}                       <!-- Division -->
 ```
 
-### Comparison Transformers
+### ⚖️ Comparison Transformers
 
 ```handlebars
 {{eq a b}}                           <!-- Equal -->
@@ -368,7 +447,7 @@ Format values for display:
 {{lte a b}}                           <!-- Less than or equal -->
 ```
 
-### Logical Transformers
+### 🔗 Logical Transformers
 
 ```handlebars
 {{#and condition1 condition2}}
@@ -380,7 +459,7 @@ Format values for display:
 {{/or}}
 ```
 
-## Prompt Builder API
+## 🏗️ Prompt Builder API
 
 Build prompts programmatically with a fluent API. The Builder is perfect for dynamically constructing prompts in code, then you can convert it to a PromptWeaver instance for rendering with data.
 
@@ -457,7 +536,7 @@ All methods return `this` for method chaining.
 - `.validate(data, options?)` - Validate data against template (uses PromptWeaver internally)
 - `.clear()` - Clear all content and start fresh
 
-## Custom Transformers
+## 🎯 Custom Transformers
 
 Register custom transformers:
 
@@ -487,7 +566,7 @@ const weaver = new PromptWeaver(template, {
 });
 ```
 
-## Validation
+## ✅ Validation
 
 ### Template Validation
 
@@ -516,7 +595,7 @@ if (!result.valid) {
 }
 ```
 
-## Template Composition
+## 🧩 Template Composition
 
 Compose multiple templates:
 
@@ -538,7 +617,7 @@ const weaver = PromptWeaver.composeAndCreate(
 );
 ```
 
-## Partials
+## 🧩 Partials
 
 Register and use partial templates:
 
@@ -562,7 +641,7 @@ Or register programmatically:
 weaver.setPartial("header", "<header>{{title}}</header>");
 ```
 
-## Error Handling
+## ⚠️ Error Handling
 
 Enhanced error messages with context:
 
@@ -583,7 +662,7 @@ try {
 }
 ```
 
-## Examples
+## 💡 Examples
 
 ### Code Review Assistant
 
@@ -931,7 +1010,7 @@ const output = weaver.format({
 - Convert to PromptWeaver for template rendering with variables
 - Validate data against the built template
 
-## TypeScript Support
+## 🔷 TypeScript Support
 
 Full TypeScript support with generics:
 
@@ -951,6 +1030,6 @@ const output = weaver.format({
 });
 ```
 
-## License
+## 📄 License
 
 MIT
