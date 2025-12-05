@@ -98,10 +98,12 @@ describe("Template Validation Feature", () => {
   });
 
   describe("Error Recovery", () => {
-    it("should handle template compilation errors gracefully", () => {
+    it("should handle template compilation gracefully", () => {
+      // Handlebars is lenient and accepts templates like {{#if}}{{/if}} without a condition.
+      // The constructor should not throw for templates that Handlebars accepts.
       expect(() => {
-        new PromptWeaver("{{#if}}{{/if}}"); // Missing condition
-      }).not.toThrow(); // Handlebars is lenient, but our validation should catch it
+        new PromptWeaver("{{#if}}{{/if}}");
+      }).not.toThrow();
     });
 
     it("should handle invalid partial references", () => {

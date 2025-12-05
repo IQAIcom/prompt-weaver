@@ -465,8 +465,8 @@ describe("Schema Validation Feature", () => {
         count: z.number().default(0),
       });
       const weaver = new PromptWeaver("{{name}}: {{count}}", { schema });
-      // Note: Zod defaults are applied during parsing, so we need to pass valid data
-      expect(weaver.format({ name: "Test", count: 5 })).toBe("Test: 5");
+      // Zod defaults are applied during parsing. Pass an empty object to test this.
+      expect(weaver.format({})).toBe("Unknown: 0");
     });
   });
 });

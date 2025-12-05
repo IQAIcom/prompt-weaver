@@ -44,9 +44,8 @@ describe("Template Analysis Feature", () => {
       const template = '{{formatDate user.createdAt "YYYY-MM-DD"}}';
       const weaver = new PromptWeaver(template);
       const variables = weaver.extractVariables();
-      // Note: Variable extraction may not catch variables in string literals
-      // This test verifies the current behavior
-      expect(variables.size).toBeGreaterThanOrEqual(0);
+      // The improved extraction should handle this, so we can make a stronger assertion.
+      expect(variables.has("user")).toBe(true);
     });
 
     it("should extract variables from array access", () => {
