@@ -277,6 +277,21 @@ export class PromptWeaver<
   }
 
   /**
+   * Ensure schema is configured, throwing an error if not
+   * @private
+   * @returns The configured schema
+   * @throws Error if no schema is configured
+   */
+  private _ensureSchema(): TSchema {
+    if (!this.schema) {
+      throw new Error(
+        "No schema configured. Pass a Standard Schema compatible validator in options."
+      );
+    }
+    return this.schema;
+  }
+
+  /**
    * Get the configured schema vendor name
    * @returns The vendor name or undefined if no schema is configured
    */
@@ -310,12 +325,8 @@ export class PromptWeaver<
    * ```
    */
   validateSchema(data: unknown): SchemaValidationResult<StandardSchemaV1.InferOutput<TSchema>> {
-    if (!this.schema) {
-      throw new Error(
-        "No schema configured. Pass a Standard Schema compatible validator in options."
-      );
-    }
-    return validateWithSchema(this.schema, data);
+    const schema = this._ensureSchema();
+    return validateWithSchema(schema, data);
   }
 
   /**
@@ -327,12 +338,8 @@ export class PromptWeaver<
   async validateSchemaAsync(
     data: unknown
   ): Promise<SchemaValidationResult<StandardSchemaV1.InferOutput<TSchema>>> {
-    if (!this.schema) {
-      throw new Error(
-        "No schema configured. Pass a Standard Schema compatible validator in options."
-      );
-    }
-    return validateWithSchemaAsync(this.schema, data);
+    const schema = this._ensureSchema();
+    return validateWithSchemaAsync(schema, data);
   }
 
   /**
@@ -360,14 +367,10 @@ export class PromptWeaver<
    * ```
    */
   formatWithSchema(data: unknown): string {
-    if (!this.schema) {
-      throw new Error(
-        "No schema configured. Pass a Standard Schema compatible validator in options."
-      );
-    }
+    const schema = this._ensureSchema();
 
     // Validate and parse data with schema
-    const validatedData = parseWithSchema(this.schema, data);
+    const validatedData = parseWithSchema(schema, data);
 
     return this.template(validatedData);
   }
@@ -382,14 +385,10 @@ export class PromptWeaver<
    * @throws Error if no schema is configured
    */
   async formatWithSchemaAsync(data: unknown): Promise<string> {
-    if (!this.schema) {
-      throw new Error(
-        "No schema configured. Pass a Standard Schema compatible validator in options."
-      );
-    }
+    const schema = this._ensureSchema();
 
     // Validate and parse data with schema
-    const validatedData = await parseWithSchemaAsync(this.schema, data);
+    const validatedData = await parseWithSchemaAsync(schema, data);
 
     return this.template(validatedData);
   }

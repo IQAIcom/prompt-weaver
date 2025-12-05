@@ -44,10 +44,15 @@ export function isStandardSchema(value: unknown): value is StandardSchemaV1 {
  */
 export class SchemaValidationError extends Error {
   constructor(
-    message: string,
     public readonly issues: ReadonlyArray<StandardSchemaV1.Issue>,
     public readonly vendor?: string
   ) {
+    const issueMessages = issues.map((issue) => {
+      const path = formatIssuePath(issue.path);
+      return path ? `${path}: ${issue.message}` : issue.message;
+    });
+    const message = `Schema validation failed:\n  - ${issueMessages.join("\n  - ")}`;
+
     super(message);
     this.name = "SchemaValidationError";
     // biome-ignore lint/suspicious/noExplicitAny: Error.captureStackTrace is V8-specific
@@ -59,13 +64,10 @@ export class SchemaValidationError extends Error {
 
   /**
    * Get a formatted error message with all issues
+   * @deprecated The message is now built in the constructor. Use error.message directly.
    */
   getFormattedMessage(): string {
-    const issueMessages = this.issues.map((issue) => {
-      const path = formatIssuePath(issue.path);
-      return path ? `${path}: ${issue.message}` : issue.message;
-    });
-    return `Schema validation failed:\n  - ${issueMessages.join("\n  - ")}`;
+    return this.message;
   }
 }
 
@@ -247,11 +249,7 @@ export function parseWithSchema<T extends StandardSchemaV1>(
   const result = validateWithSchema(schema, data);
 
   if (!result.success) {
-    throw new SchemaValidationError(
-      `Validation failed with ${result.issues?.length ?? 0} issue(s)`,
-      result.issues ?? [],
-      result.vendor
-    );
+    throw new SchemaValidationError(result.issues ?? [], result.vendor);
   }
 
   return result.data as StandardSchemaV1.InferOutput<T>;
@@ -272,11 +270,7 @@ export async function parseWithSchemaAsync<T extends StandardSchemaV1>(
   const result = await validateWithSchemaAsync(schema, data);
 
   if (!result.success) {
-    throw new SchemaValidationError(
-      `Validation failed with ${result.issues?.length ?? 0} issue(s)`,
-      result.issues ?? [],
-      result.vendor
-    );
+    throw new SchemaValidationError(result.issues ?? [], result.vendor);
   }
 
   return result.data as StandardSchemaV1.InferOutput<T>;
@@ -309,6 +303,38 @@ export function createSafeParser<T extends StandardSchemaV1>(
 ): (data: unknown) => StandardSchemaV1.InferOutput<T> | undefined {
   return (data: unknown) => {
     const result = validateWithSchema(schema, data);
+    return result.success ? result.data : undefined;
+  };
+}
+
+/**
+ * Create a safe async parser that returns undefined instead of throwing
+ *
+ * @param schema - A Standard Schema compatible validator
+ * @returns A function that parses data asynchronously and returns undefined on failure
+ *
+ * @example
+ * ```ts
+ * import { z } from 'zod';
+ * import { createSafeParserAsync } from '@iqai/prompt-weaver';
+ *
+ * const parseUser = createSafeParserAsync(z.object({
+ *   email: z.string().email().refine(async (email) => {
+ *     return await checkEmailExists(email);
+ *   }),
+ * }));
+ *
+ * const user = await parseUser(unknownData);
+ * if (user) {
+ *   console.log(user.email);
+ * }
+ * ```
+ */
+export function createSafeParserAsync<T extends StandardSchemaV1>(
+  schema: T
+): (data: unknown) => Promise<StandardSchemaV1.InferOutput<T> | undefined> {
+  return async (data: unknown) => {
+    const result = await validateWithSchemaAsync(schema, data);
     return result.success ? result.data : undefined;
   };
 }
