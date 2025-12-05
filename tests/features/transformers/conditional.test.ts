@@ -6,15 +6,7 @@ import { registerConditionalHelpers } from "../../../src/transformers/conditiona
 describe("Conditional Transformers Feature", () => {
   beforeEach(() => {
     // Unregister all conditional helpers
-    const helpers = [
-      "ifElse",
-      "switch",
-      "case",
-      "coalesce",
-      "default",
-      "exists",
-      "isDefined",
-    ];
+    const helpers = ["ifElse", "switch", "case", "coalesce", "default", "exists", "isDefined"];
     helpers.forEach((helper) => Handlebars.unregisterHelper(helper));
     registerConditionalHelpers();
   });
