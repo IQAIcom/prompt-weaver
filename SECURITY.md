@@ -18,7 +18,7 @@ Security vulnerabilities should be reported privately to prevent exploitation.
 
 ### 2. Report the vulnerability
 
-Please email security concerns to: **[INSERT SECURITY EMAIL]**
+please contact our admins in telegram @IQAICOM
 
 Include the following information in your report:
 
