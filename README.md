@@ -12,6 +12,8 @@ A powerful, extensible template engine for building prompts. Prompt Weaver provi
 
 - 🎯 **Extensible Plugin System** - Register custom transformers and helpers
 - 🔧 **Rich Built-in Transformers** - String, date, object, collection, and conditional helpers
+- 🎨 **Powerful Templating** - Conditional blocks (`{{#if}}`, `{{#unless}}`), loops (`{{#each}}`), context switching (`{{#with}}`), and switch/case logic
+- 🧩 **Template Partials** - Reusable template fragments for DRY code
 - ✅ **Validation & Type Safety** - Validate templates and data with Standard Schema (Zod, Valibot, ArkType, etc.)
 - 🔷 **Schema-Based Type Inference** - Automatic TypeScript type inference from validation schemas
 - 🏗️ **Fluent Builder API** - Programmatically build prompts with a clean API
@@ -423,6 +425,91 @@ if (!validation.success) {
 {{#and condition1 condition2}} Content {{/and}}
 {{#or condition1 condition2}} Content {{/or}}
 ```
+
+## 🎨 Templating Features
+
+Prompt Weaver is built on Handlebars, providing powerful templating capabilities for dynamic prompt generation.
+
+### Block Helpers
+
+**Conditional Blocks:**
+```handlebars
+{{#if condition}}
+  Content when true
+{{else}}
+  Content when false
+{{/if}}
+
+{{#unless condition}}
+  Content when false
+{{/unless}}
+```
+
+**Loops:**
+```handlebars
+{{#each items}}
+  {{increment @index}}. {{this}}
+{{/each}}
+
+{{#each users}}
+  - {{name}} ({{email}})
+{{else}}
+  No users found
+{{/each}}
+```
+
+**Context Switching:**
+```handlebars
+{{#with user}}
+  Name: {{name}}
+  Email: {{email}}
+{{/with}}
+```
+
+**Switch/Case Logic:**
+```handlebars
+{{#switch status}}
+  {{#case "active"}}
+    ✅ Active
+  {{/case}}
+  {{#case "pending"}}
+    ⏳ Pending
+  {{/case}}
+  {{#case "inactive"}}
+    ❌ Inactive
+  {{/case}}
+{{/switch}}
+```
+
+### Special Variables
+
+- `@index` - Current index in `{{#each}}` loops (0-based)
+- `@key` - Current key in `{{#each}}` loops over objects
+- `@first` - `true` on first iteration
+- `@last` - `true` on last iteration
+- `@root` - Access root context from nested contexts
+- `this` - Current context value in loops
+
+**Example:**
+```handlebars
+{{#each items}}
+  {{#if @first}}First item: {{/if}}
+  {{increment @index}}. {{this}}
+  {{#if @last}} (Last item){{/if}}
+{{/each}}
+```
+
+### Partials
+
+Include reusable template fragments:
+
+```handlebars
+{{> header}}
+Main content here
+{{> footer}}
+```
+
+See the [Partials](#-partials) section for detailed examples.
 
 ## 🎯 Custom Transformers
 
