@@ -2,7 +2,7 @@
 
 Complete reference guide for all built-in transformers available in Prompt Weaver.
 
-Transformers are used within Handlebars templates to format and manipulate data. Use them with the syntax: `{{variable transformer}}` or `{{variable transformer arg1 arg2}}`.
+Transformers are used within Handlebars templates to format and manipulate data. Use them with the syntax: `{{transformer variable}}` or `{{transformer variable arg1 arg2}}`.
 
 ---
 
@@ -12,66 +12,66 @@ Transformers are used within Handlebars templates to format and manipulate data.
 
 | Transformer | Syntax | Description | Example |
 | :--- | :--- | :--- | :--- |
-| `upper` | `{{text upper}}` | Convert to uppercase | `"hello"` → `"HELLO"` |
-| `lower` | `{{text lower}}` | Convert to lowercase | `"HELLO"` → `"hello"` |
-| `capitalize` | `{{text capitalize}}` | Capitalize first letter | `"hello"` → `"Hello"` |
+| `upper` | `{{upper text}}` | Convert to uppercase | `"hello"` → `"HELLO"` |
+| `lower` | `{{lower text}}` | Convert to lowercase | `"HELLO"` → `"hello"` |
+| `capitalize` | `{{capitalize text}}` | Capitalize first letter | `"hello"` → `"Hello"` |
 
 ### String Manipulation
 
 | Transformer | Syntax | Description | Example |
 | :--- | :--- | :--- | :--- |
-| `replace` | `{{text replace "old" "new"}}` | Replace first occurrence | `"hello world"` → `"hello neworld"` |
-| `replaceAll` | `{{text replaceAll " " "-"}}` | Replace all occurrences | `"hello world"` → `"hello-world"` |
-| `regexReplace` | `{{text regexReplace "\\d+" "NUM"}}` | Regex replace | `"abc123"` → `"abcNUM"` |
-| `slice` | `{{text slice 0 5}}` | Extract substring | `"hello"` → `"hello"` |
-| `substring` | `{{text substring 1 4}}` | Extract substring | `"hello"` → `"ell"` |
-| `trim` | `{{text trim}}` | Remove leading/trailing whitespace | `" hello "` → `"hello"` |
-| `trimStart` | `{{text trimStart}}` | Remove leading whitespace | `" hello"` → `"hello"` |
-| `trimEnd` | `{{text trimEnd}}` | Remove trailing whitespace | `"hello "` → `"hello"` |
+| `replace` | `{{replace text "old" "new"}}` | Replace first occurrence | `"hello world"` → `"hello neworld"` |
+| `replaceAll` | `{{replaceAll text " " "-"}}` | Replace all occurrences | `"hello world"` → `"hello-world"` |
+| `regexReplace` | `{{regexReplace text "\\d+" "NUM"}}` | Regex replace | `"abc123"` → `"abcNUM"` |
+| `slice` | `{{slice text 0 5}}` | Extract substring | `"hello"` → `"hello"` |
+| `substring` | `{{substring text 1 4}}` | Extract substring | `"hello"` → `"ell"` |
+| `trim` | `{{trim text}}` | Remove leading/trailing whitespace | `" hello "` → `"hello"` |
+| `trimStart` | `{{trimStart text}}` | Remove leading whitespace | `" hello"` → `"hello"` |
+| `trimEnd` | `{{trimEnd text}}` | Remove trailing whitespace | `"hello "` → `"hello"` |
 
 ### Padding
 
 | Transformer | Syntax | Description | Example |
 | :--- | :--- | :--- | :--- |
-| `padStart` | `{{text padStart 10 "0"}}` | Pad start with character | `"5"` → `"0000000005"` |
-| `padEnd` | `{{text padEnd 10 " "}}` | Pad end with character | `"hello"` → `"hello     "` |
+| `padStart` | `{{padStart text 10 "0"}}` | Pad start with character | `"5"` → `"0000000005"` |
+| `padEnd` | `{{padEnd text 10 " "}}` | Pad end with character | `"hello"` → `"hello     "` |
 
 ### Truncation
 
 | Transformer | Syntax | Description | Example |
 | :--- | :--- | :--- | :--- |
-| `truncate` | `{{text truncate}}` | Truncate to 50 chars with ellipsis | `"very long text..."` → `"very long text..."` |
-| `ellipsis` | `{{text ellipsis 10}}` | Truncate to N chars with ellipsis | `"hello world"` → `"hello w..."` |
+| `truncate` | `{{truncate text}}` | Truncate to 50 chars with ellipsis | `"very long text..."` → `"very long text..."` |
+| `ellipsis` | `{{ellipsis text 10}}` | Truncate to N chars with ellipsis | `"hello world"` → `"hello w..."` |
 
 ### Case Formatting
 
 | Transformer | Syntax | Description | Example |
 | :--- | :--- | :--- | :--- |
-| `slugify` | `{{text slugify}}` | Convert to URL slug | `"Hello World!"` → `"hello-world"` |
-| `kebabCase` | `{{text kebabCase}}` | Convert to kebab-case | `"helloWorld"` → `"hello-world"` |
-| `camelCase` | `{{text camelCase}}` | Convert to camelCase | `"hello world"` → `"helloWorld"` |
-| `snakeCase` | `{{text snakeCase}}` | Convert to snake_case | `"hello world"` → `"hello_world"` |
+| `slugify` | `{{slugify text}}` | Convert to URL slug | `"Hello World!"` → `"hello-world"` |
+| `kebabCase` | `{{kebabCase text}}` | Convert to kebab-case | `"helloWorld"` → `"hello-world"` |
+| `camelCase` | `{{camelCase text}}` | Convert to camelCase | `"hello world"` → `"helloWorld"` |
+| `snakeCase` | `{{snakeCase text}}` | Convert to snake_case | `"hello world"` → `"hello_world"` |
 
 ### Word Inflection
 
 | Transformer | Syntax | Description | Example |
 | :--- | :--- | :--- | :--- |
-| `pluralize` | `{{word pluralize}}` | Pluralize word | `"apple"` → `"apples"` |
-| `pluralize` | `{{word pluralize count}}` | Pluralize based on count | `pluralize "apple" 1` → `"apple"` |
-| `singularize` | `{{word singularize}}` | Singularize word | `"apples"` → `"apple"` |
+| `pluralize` | `{{pluralize word}}` | Pluralize word | `"apple"` → `"apples"` |
+| `pluralize` | `{{pluralize word count}}` | Pluralize based on count | `pluralize "apple" 1` → `"apple"` |
+| `singularize` | `{{singularize word}}` | Singularize word | `"apples"` → `"apple"` |
 
 ### Array/String Conversion
 
 | Transformer | Syntax | Description | Example |
 | :--- | :--- | :--- | :--- |
-| `split` | `{{text split ","}}` | Split string into array | `"a,b,c"` → `["a", "b", "c"]` |
-| `join` | `{{array join ", "}}` | Join array into string | `["a", "b"]` → `"a, b"` |
+| `split` | `{{split text ","}}` | Split string into array | `"a,b,c"` → `["a", "b", "c"]` |
+| `join` | `{{join array ", "}}` | Join array into string | `["a", "b"]` → `"a, b"` |
 
 ### JSON & Data
 
 | Transformer | Syntax | Description | Example |
 | :--- | :--- | :--- | :--- |
-| `json` | `{{data json}}` | Convert to JSON string | `{a: 1}` → `"{\"a\":1}"` |
+| `json` | `{{json data}}` | Convert to JSON string | `{a: 1}` → `"{\"a\":1}"` |
 
 ---
 
@@ -81,9 +81,9 @@ Transformers are used within Handlebars templates to format and manipulate data.
 
 | Transformer | Syntax | Description | Example |
 | :--- | :--- | :--- | :--- |
-| `formatDate` | `{{date formatDate "YYYY-MM-DD"}}` | Format date with pattern | `new Date()` → `"2024-12-15"` |
-| `formatTime` | `{{date formatTime}}` | Format time only | `new Date()` → `"3:45:30 PM"` |
-| `formatDateTime` | `{{date formatDateTime}}` | Format date and time | `new Date()` → `"12/15/2024, 3:45:30 PM"` |
+| `formatDate` | `{{formatDate date "YYYY-MM-DD"}}` | Format date with pattern | `new Date()` → `"2024-12-15"` |
+| `formatTime` | `{{formatTime date}}` | Format time only | `new Date()` → `"3:45:30 PM"` |
+| `formatDateTime` | `{{formatDateTime date}}` | Format date and time | `new Date()` → `"12/15/2024, 3:45:30 PM"` |
 
 **Date Format Patterns:**
 - `YYYY` - Full year (e.g., 2024)
@@ -97,33 +97,33 @@ Transformers are used within Handlebars templates to format and manipulate data.
 
 | Transformer | Syntax | Description | Example |
 | :--- | :--- | :--- | :--- |
-| `relativeTime` | `{{date relativeTime}}` | Human-readable relative time | `2 hours ago` or `in 3 days` |
+| `relativeTime` | `{{relativeTime date}}` | Human-readable relative time | `2 hours ago` or `in 3 days` |
 
 ### Date Comparisons
 
 | Transformer | Syntax | Description | Example |
 | :--- | :--- | :--- | :--- |
-| `isToday` | `{{date isToday}}` | Check if date is today | Returns `true` or `false` |
-| `isPast` | `{{date isPast}}` | Check if date is in the past | Returns `true` or `false` |
-| `isFuture` | `{{date isFuture}}` | Check if date is in the future | Returns `true` or `false` |
+| `isToday` | `{{isToday date}}` | Check if date is today | Returns `true` or `false` |
+| `isPast` | `{{isPast date}}` | Check if date is in the past | Returns `true` or `false` |
+| `isFuture` | `{{isFuture date}}` | Check if date is in the future | Returns `true` or `false` |
 
 ### Date Arithmetic
 
 | Transformer | Syntax | Description | Example |
 | :--- | :--- | :--- | :--- |
-| `addDays` | `{{date addDays 7}}` | Add days to date | Returns new Date |
-| `subtractDays` | `{{date subtractDays 3}}` | Subtract days from date | Returns new Date |
-| `addHours` | `{{date addHours 2}}` | Add hours to date | Returns new Date |
-| `subtractHours` | `{{date subtractHours 1}}` | Subtract hours from date | Returns new Date |
-| `addMinutes` | `{{date addMinutes 30}}` | Add minutes to date | Returns new Date |
-| `subtractMinutes` | `{{date subtractMinutes 15}}` | Subtract minutes from date | Returns new Date |
+| `addDays` | `{{addDays date 7}}` | Add days to date | Returns new Date |
+| `subtractDays` | `{{subtractDays date 3}}` | Subtract days from date | Returns new Date |
+| `addHours` | `{{addHours date 2}}` | Add hours to date | Returns new Date |
+| `subtractHours` | `{{subtractHours date 1}}` | Subtract hours from date | Returns new Date |
+| `addMinutes` | `{{addMinutes date 30}}` | Add minutes to date | Returns new Date |
+| `subtractMinutes` | `{{subtractMinutes date 15}}` | Subtract minutes from date | Returns new Date |
 
 ### Timestamp Conversion
 
 | Transformer | Syntax | Description | Example |
 | :--- | :--- | :--- | :--- |
-| `timestamp` | `{{date timestamp}}` | Get milliseconds timestamp | `1640995200000` |
-| `unixTimestamp` | `{{date unixTimestamp}}` | Get Unix timestamp (seconds) | `1640995200` |
+| `timestamp` | `{{timestamp date}}` | Get milliseconds timestamp | `1640995200000` |
+| `unixTimestamp` | `{{unixTimestamp date}}` | Get Unix timestamp (seconds) | `1640995200` |
 
 ---
 
@@ -143,14 +143,14 @@ Transformers are used within Handlebars templates to format and manipulate data.
 
 | Transformer | Syntax | Description | Example |
 | :--- | :--- | :--- | :--- |
-| `currency` | `{{price currency}}` | Format as currency | `1234.56` → `"$1,234.56"` |
-| `price` | `{{price price}}` | Format as price (4 decimals) | `0.1234` → `"$0.1234"` |
-| `percent` | `{{val percent}}` | Format as percentage | `12.34` → `"12.34%"` |
-| `signedPercent` | `{{change signedPercent}}` | Signed percentage | `12.34` → `"+12.34%"` |
-| `signedCurrency` | `{{amount signedCurrency}}` | Signed currency | `1234.56` → `"+$1,234.56"` |
-| `integer` | `{{count integer}}` | Format as integer with commas | `1234` → `"1,234"` |
-| `number` | `{{value number}}` | Format number with commas | `1234.56` → `"1,234.56"` |
-| `compact` | `{{views compact}}` | Compact notation | `1200000` → `"1.2M"` |
+| `currency` | `{{currency price}}` | Format as currency | `1234.56` → `"$1,234.56"` |
+| `price` | `{{price value}}` | Format as price (4 decimals) | `0.1234` → `"$0.1234"` |
+| `percent` | `{{percent val}}` | Format as percentage | `12.34` → `"12.34%"` |
+| `signedPercent` | `{{signedPercent change}}` | Signed percentage | `12.34` → `"+12.34%"` |
+| `signedCurrency` | `{{signedCurrency amount}}` | Signed currency | `1234.56` → `"+$1,234.56"` |
+| `integer` | `{{integer count}}` | Format as integer with commas | `1234` → `"1,234"` |
+| `number` | `{{number value}}` | Format number with commas | `1234.56` → `"1,234.56"` |
+| `compact` | `{{compact views}}` | Compact notation | `1200000` → `"1.2M"` |
 
 ---
 
@@ -319,7 +319,7 @@ Transformers can be chained in Handlebars expressions:
 
 ```handlebars
 {{#each users}}
-  {{increment @index}}. {{name capitalize}} - {{balance currency}}
+  {{increment @index}}. {{capitalize name}} - {{currency balance}}
 {{/each}}
 ```
 
@@ -335,7 +335,7 @@ Transformers can be chained in Handlebars expressions:
 
 ```handlebars
 {{#each (sort (filter users "active") "name")}}
-  {{name capitalize}}
+  {{capitalize name}}
 {{/each}}
 ```
 

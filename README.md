@@ -62,7 +62,7 @@ Start simple. Define a template, inject data, and get a string.
 import { PromptWeaver } from "@iqai/prompt-weaver";
 
 // 1. Define a template with variables and a transformer
-const template = "Hello {{name}}, your balance is {{balance currency}}.";
+const template = "Hello {{name}}, your balance is {{currency balance}}.";
 
 // 2. Initialize Weaver
 const weaver = new PromptWeaver(template);
@@ -90,7 +90,7 @@ You are helping {{userName}}.
 
 ## Task Details
 
-- **Deadline**: {{deadline relativeTime}} ({{deadline formatDate "MMM DD"}})
+- **Deadline**: {{relativeTime deadline}} ({{formatDate deadline "MMM DD"}})
 - **Status**: {{#if isPremium}}⭐ Premium{{else}}Standard{{/if}}
 
 ## Requirements
@@ -177,7 +177,7 @@ import { PromptBuilder } from "@iqai/prompt-weaver";
 const builder = new PromptBuilder()
   .heading(1, "User Dashboard")
   .section("Welcome", "Hello {{userName}}!")
-  .section("Account Info", "Your balance is {{balance currency}}")
+  .section("Account Info", "Your balance is {{currency balance}}")
   .conditional(isPremium, "⭐ Premium Member", "Upgrade to Premium");
 
 // Step 2: Convert to PromptWeaver for rendering
@@ -214,11 +214,11 @@ Prompt Weaver utilizes Handlebars syntax for control flow and data formatting.
 
 ### Variable Interpolation & Transformers
 
-Variables are interpolated using `{{variableName}}`. You can format variables in different ways by adding **transformers** after the variable name:
+Variables are interpolated using `{{variableName}}`. You can format variables using **transformers** (Handlebars helpers):
 
 ```handlebars
-{{variableName transformer}}
-{{variableName transformer arg1 arg2}}
+{{transformer variableName}}
+{{transformer variableName arg1 arg2}}
 ```
 
 **Basic variable:**
@@ -228,22 +228,22 @@ Hello {{name}}!
 
 **With transformer:**
 ```handlebars
-Hello {{name capitalize}}!          <!-- Capitalizes the name -->
-Your balance is {{balance currency}}  <!-- Formats as currency: $1,234.56 -->
-Due {{deadline relativeTime}}        <!-- Shows relative time: "in 3 days" -->
+Hello {{capitalize name}}!          <!-- Capitalizes the name -->
+Your balance is {{currency balance}}  <!-- Formats as currency: $1,234.56 -->
+Due {{relativeTime deadline}}        <!-- Shows relative time: "in 3 days" -->
 ```
 
 **Transformers with arguments:**
 ```handlebars
-{{text ellipsis 50}}                  <!-- Truncate to 50 chars -->
-{{date formatDate "YYYY-MM-DD"}}      <!-- Format date with pattern -->
-{{text replace "old" "new"}}          <!-- Replace text -->
+{{ellipsis text 50}}                  <!-- Truncate to 50 chars -->
+{{formatDate date "YYYY-MM-DD"}}      <!-- Format date with pattern -->
+{{replace text "old" "new"}}          <!-- Replace text -->
 ```
 
 **Chaining transformers in expressions:**
 ```handlebars
 {{#each (sort (filter users "active") "name")}}
-  {{increment @index}}. {{name capitalize}} - {{balance currency}}
+  {{increment @index}}. {{capitalize name}} - {{currency balance}}
 {{/each}}
 ```
 
@@ -330,7 +330,7 @@ const weaver = new PromptWeaver(template, {
 `,
     header: "# {{title}}\n---",
     footer: `---
-Generated on {{date formatDate "YYYY-MM-DD"}}`
+Generated on {{formatDate date "YYYY-MM-DD"}}`
   }
 });
 
@@ -383,12 +383,12 @@ Prompt Weaver comes with a massive library of transformers to format data direct
 
 | Transformer | Example | Result |
 | :--- | :--- | :--- |
-| `upper` | `{{text upper}}` | HELLO |
-| `lower` | `{{text lower}}` | hello |
-| `capitalize` | `{{text capitalize}}` | Hello |
-| `ellipsis` | `{{text ellipsis 10}}` | Hello w... |
-| `json` | `{{data json}}` | `{"a":1}` |
-| `pluralize` | `{{word pluralize}}` | apples |
+| `upper` | `{{upper text}}` | HELLO |
+| `lower` | `{{lower text}}` | hello |
+| `capitalize` | `{{capitalize text}}` | Hello |
+| `ellipsis` | `{{ellipsis text 10}}` | Hello w... |
+| `json` | `{{json data}}` | `{"a":1}` |
+| `pluralize` | `{{pluralize word}}` | apples |
 
 **Also available:** `replace`, `replaceAll`, `regexReplace`, `trim`, `trimStart`, `trimEnd`, `slugify`, `kebabCase`, `camelCase`, `snakeCase`, `split`, `join`, `truncate`, `slice`, `substring`, `padStart`, `padEnd`, `singularize`
 
@@ -403,9 +403,9 @@ Prompt Weaver comes with a massive library of transformers to format data direct
 
 | Transformer | Example | Result |
 | :--- | :--- | :--- |
-| `formatDate` | `{{date formatDate "YYYY-MM-DD"}}` | 2023-12-25 |
-| `relativeTime` | `{{date relativeTime}}` | 2 hours ago |
-| `isToday` | `{{date isToday}}` | true/false |
+| `formatDate` | `{{formatDate date "YYYY-MM-DD"}}` | 2023-12-25 |
+| `relativeTime` | `{{relativeTime date}}` | 2 hours ago |
+| `isToday` | `{{isToday date}}` | true/false |
 
 **Also available:** `formatTime`, `formatDateTime`, `isPast`, `isFuture`, `addDays`, `subtractDays`, `addHours`, `subtractHours`, `addMinutes`, `subtractMinutes`, `timestamp`, `unixTimestamp`
 
@@ -420,9 +420,9 @@ Prompt Weaver comes with a massive library of transformers to format data direct
 
 | Transformer | Example | Result |
 | :--- | :--- | :--- |
-| `currency` | `{{price currency}}` | $1,234.56 |
-| `percent` | `{{val percent}}` | 12.34% |
-| `compact` | `{{views compact}}` | 1.2M |
+| `currency` | `{{currency price}}` | $1,234.56 |
+| `percent` | `{{percent val}}` | 12.34% |
+| `compact` | `{{compact views}}` | 1.2M |
 | `add` | `{{add 5 2}}` | 7 |
 
 **Also available:** `subtract`, `multiply`, `divide`, `increment`, `price`, `signedPercent`, `signedCurrency`, `integer`, `number`
@@ -612,7 +612,7 @@ import { registerTransformer } from "@iqai/prompt-weaver";
 
 // Simple transformer (no options)
 registerTransformer("reverse", (str) => str.split("").reverse().join(""));
-// Use: {{ text reverse }}
+// Use: {{reverse text}}
 
 // Transformer with options
 registerTransformer("truncate", (value, maxLength) => {
@@ -620,7 +620,7 @@ registerTransformer("truncate", (value, maxLength) => {
   const length = Number(maxLength) || 50;
   return str.length > length ? `${str.slice(0, length - 3)}...` : str;
 });
-// Use: {{longText truncate 100}}
+// Use: {{truncate longText 100}}
 ```
 
 **Scoped Registry (Isolation):**
@@ -772,8 +772,8 @@ You are a data analyst with expertise in {{domain}}.
 
 ## Dataset Overview
 
-- **Total Records**: {{totalRecords integer}}
-- **Date Range**: {{startDate formatDate "YYYY-MM-DD"}} to {{endDate formatDate "YYYY-MM-DD"}}
+- **Total Records**: {{integer totalRecords}}
+- **Date Range**: {{formatDate startDate "YYYY-MM-DD"}} to {{formatDate endDate "YYYY-MM-DD"}}
 - **Key Metrics**: {{#each metrics}}{{this}}{{#unless @last}}, {{/unless}}{{/each}}
 
 ## Data Summary
@@ -834,7 +834,7 @@ You are a customer support specialist for {{companyName}}.
 
 - **Name**: {{customerName}}
 - **Account Type**: {{accountType}}
-- **Member Since**: {{memberSince formatDate "MMMM YYYY"}}
+- **Member Since**: {{formatDate memberSince "MMMM YYYY"}}
 {{#if isPremium}}
 - ⭐ **Premium Member**
 {{/if}}
@@ -843,8 +843,8 @@ You are a customer support specialist for {{companyName}}.
 
 **Ticket ID**: {{ticketId}}
 **Category**: {{category}}
-**Priority**: {{priority upper}}
-**Reported**: {{reportedAt relativeTime}}
+**Priority**: {{upper priority}}
+**Reported**: {{relativeTime reportedAt}}
 
 **Description**:
 {{issueDescription}}
@@ -862,7 +862,7 @@ This customer has {{previousTickets.length}} previous ticket{{pluralize "ticket"
 ## Recent Order History
 
 {{#each orderHistory}}
-- Order #{{orderNumber}}: {{productName}} - {{orderDate formatDate "MMM DD, YYYY"}} - {{status capitalize}}
+- Order #{{orderNumber}}: {{productName}} - {{formatDate orderDate "MMM DD, YYYY"}} - {{capitalize status}}
 {{/each}}
 {{/if}}
 
