@@ -211,9 +211,7 @@ export class PromptBuilder {
    * Add multiple checkboxes/task list items
    * @param items - Array of checkbox items (can be strings or objects with text and checked properties)
    */
-  checkboxes(
-    items: Array<string | { text: string; checked?: boolean }>
-  ): this {
+  checkboxes(items: Array<string | { text: string; checked?: boolean }>): this {
     if (items.length === 0) return this;
 
     const checkboxItems = items.map((item) => {
