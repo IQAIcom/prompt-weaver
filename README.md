@@ -212,11 +212,10 @@ interface PromptWeaverOptions {
     handler: TemplateHelper;
     metadata?: { description?: string; dependencies?: string[]; version?: string };
   }>;
-  strict?: boolean; // Warn about extra variables
-  throwOnMissing?: boolean; // Throw error on missing required variables
   helpers?: Record<string, TemplateHelper>; // Additional helpers
   registry?: TransformerRegistry; // Custom transformer registry
   partials?: Record<string, string>; // Partial templates
+  schema?: StandardSchemaV1; // Standard Schema validator (Zod, Valibot, ArkType, etc.)
 }
 ```
 
@@ -227,13 +226,29 @@ interface PromptWeaverOptions {
 const output = weaver.format({ name: "Alice", value: 100 });
 ```
 
-**`validate(data)`** - Validate data against template requirements
+**`validateSchema(data)`** - Validate data against schema (requires schema option)
 ```typescript
-const result = weaver.validate({ name: "Alice" });
-if (!result.valid) {
-  console.log("Missing:", result.missing);
-  console.log("Errors:", result.errors);
+import { z } from 'zod';
+
+const schema = z.object({
+  name: z.string(),
+  age: z.number().positive(),
+});
+
+const weaver = new PromptWeaver(template, { schema });
+const result = weaver.validateSchema({ name: "Alice", age: 30 });
+if (result.success) {
+  console.log("Valid data:", result.data);
+} else {
+  console.error("Validation errors:", result.issues);
 }
+```
+
+**`formatWithSchema(data)`** - Format with automatic validation
+```typescript
+// Validates and renders in one step
+// Throws SchemaValidationError if validation fails
+const output = weaver.formatWithSchema({ name: "Alice", age: 30 });
 ```
 
 **`extractVariables()`** - Get required variables from template
@@ -284,18 +299,27 @@ const weaver = builder.toPromptWeaver();
 const output1 = weaver.format({ userName: "Alice", balance: 1000, isPremium: true });
 const output2 = weaver.format({ userName: "Bob", balance: 500, isPremium: false });
 
-// Step 4: Validate data before rendering
-const validation = builder.validate({ userName: "Alice" });
-if (!validation.valid) {
-  console.log("Missing variables:", validation.missing);
+// Step 4: Validate data before rendering (with schema)
+import { z } from 'zod';
+
+const schema = z.object({
+  userName: z.string(),
+  balance: z.number(),
+  isPremium: z.boolean(),
+});
+
+const weaverWithSchema = builder.toPromptWeaver({ schema });
+const validation = weaverWithSchema.validateSchema({ userName: "Alice", balance: 1000, isPremium: true });
+if (!validation.success) {
+  console.error("Validation errors:", validation.issues);
 }
 ```
 
 ### Key Integration Points
 
 1. **`builder.toPromptWeaver(options?)`** - Converts the built prompt to a PromptWeaver instance
-2. **`builder.validate(data, options?)`** - Validates data using PromptWeaver internally
-3. **`builder.build()`** - Returns the template string, which can be used with `new PromptWeaver()`
+2. **`builder.build()`** - Returns the template string, which can be used with `new PromptWeaver()`
+3. **Schema validation** - Use `builder.toPromptWeaver({ schema })` and then call `weaver.validateSchema(data)`
 
 ### When to Use Each Approach
 
@@ -533,12 +557,15 @@ All methods return `this` for method chaining.
 **Utility Methods:**
 - `.build()` - Build final prompt string
 - `.toPromptWeaver(options?)` - Convert to PromptWeaver instance for rendering
-- `.validate(data, options?)` - Validate data against template (uses PromptWeaver internally)
 - `.clear()` - Clear all content and start fresh
+
+**Validation:** Use `.toPromptWeaver({ schema })` and then call `weaver.validateSchema(data)` on the returned instance.
 
 ## 🎯 Custom Transformers
 
-Register custom transformers:
+Register custom transformers with or without options:
+
+### Simple Transformer (No Options)
 
 ```typescript
 import { registerTransformer } from "@iqai/prompt-weaver";
@@ -551,19 +578,112 @@ registerTransformer("uppercase", (value) => {
 // {{name uppercase}}
 ```
 
-Or use the registry:
+### Transformer with Options
+
+Transformers can accept options as additional parameters. The first parameter is always the value being transformed, followed by any options:
+
+```typescript
+import { registerTransformer } from "@iqai/prompt-weaver";
+
+// Transformer with one option (like ellipsis)
+registerTransformer("truncate", (value, maxLength) => {
+  const str = String(value);
+  const length = Number(maxLength) || 50;
+  return str.length > length ? `${str.slice(0, length - 3)}...` : str;
+});
+
+// Use in template
+// {{longText truncate 100}}
+```
+
+### Transformer with Multiple Options
+
+```typescript
+import { registerTransformer } from "@iqai/prompt-weaver";
+
+// Transformer with multiple options
+registerTransformer("pad", (value, length, padString, direction) => {
+  const str = String(value);
+  const len = Number(length) || 10;
+  const pad = String(padString || " ");
+  const dir = String(direction || "end");
+  
+  if (dir === "start") {
+    return str.padStart(len, pad);
+  }
+  return str.padEnd(len, pad);
+});
+
+// Use in template
+// {{text pad 10 "0" "start"}}  <!-- Left pad with zeros -->
+// {{text pad 10 "-" "end"}}    <!-- Right pad with dashes -->
+```
+
+### Transformer with Optional Options
+
+```typescript
+import { registerTransformer } from "@iqai/prompt-weaver";
+
+// Transformer with optional options
+registerTransformer("repeat", (value, count, separator) => {
+  const str = String(value);
+  const times = Number(count) || 1;
+  const sep = separator !== undefined ? String(separator) : "";
+  
+  return Array(times).fill(str).join(sep);
+});
+
+// Use in template
+// {{word repeat 3}}           <!-- "wordwordword" -->
+// {{word repeat 3 ","}}      <!-- "word,word,word" -->
+```
+
+### Using the Registry Directly
+
+You can also use the registry directly for more control:
 
 ```typescript
 import { TransformerRegistry } from "@iqai/prompt-weaver";
 
 const registry = TransformerRegistry.createScoped();
-registry.registerTransformer("customHelper", (value) => {
-  return `Custom: ${value}`;
+
+// Register transformer with options
+registry.registerTransformer("customHelper", (value, option1, option2) => {
+  return `Custom: ${value} (${option1}, ${option2})`;
+}, {
+  description: "A custom helper with two options",
+  version: "1.0.0"
 });
 
 const weaver = new PromptWeaver(template, {
   registry: registry,
 });
+
+// Use in template
+// {{data customHelper "opt1" "opt2"}}
+```
+
+### Transformer Options Pattern
+
+When creating transformers with options, follow this pattern:
+
+1. **First parameter**: Always the value being transformed
+2. **Subsequent parameters**: Options passed in order from the template
+3. **Optional options**: Use default values or check for `undefined`
+4. **Type conversion**: Convert options to the expected types (Number, String, etc.)
+
+Example matching the built-in `ellipsis` transformer:
+
+```typescript
+registerTransformer("ellipsis", (str: string, maxLength: number) => {
+  const s = String(str);
+  const length = Number(maxLength) || 50; // Default to 50 if not provided
+  return s.length > length ? `${s.slice(0, length - 3)}...` : s;
+});
+
+// Use in template
+// {{notes ellipsis 100}}  <!-- Truncate to 100 characters -->
+// {{notes ellipsis}}      <!-- Uses default 50 characters -->
 ```
 
 ## ✅ Validation
@@ -581,19 +701,63 @@ if (!result.valid) {
 
 ### Data Validation
 
+Validate data using Standard Schema validators (Zod, Valibot, ArkType, etc.):
+
 ```typescript
-const weaver = new PromptWeaver(template, {
-  throwOnMissing: true, // Throw error on missing variables
-  strict: true, // Warn about extra variables
+import { z } from 'zod';
+import { PromptWeaver } from "@iqai/prompt-weaver";
+
+// Define your schema
+const schema = z.object({
+  name: z.string().min(1),
+  age: z.number().positive(),
+  email: z.string().email().optional(),
 });
 
-const result = weaver.validate(data);
-if (!result.valid) {
-  console.log("Missing variables:", result.missing);
-  console.log("Extra variables:", result.extra);
-  console.log("Errors:", result.errors);
+// Create PromptWeaver with schema
+const weaver = new PromptWeaver(template, { schema });
+
+// Validate data before rendering
+const result = weaver.validateSchema({ name: "Alice", age: 30 });
+if (result.success) {
+  console.log("Valid data:", result.data);
+} else {
+  console.error("Validation errors:", result.issues);
 }
 ```
+
+**Format with automatic validation:**
+
+```typescript
+// This validates and renders in one step
+// Throws SchemaValidationError if validation fails
+const output = weaver.formatWithSchema({ name: "Alice", age: 30 });
+```
+
+**Try format (returns null on validation failure):**
+
+```typescript
+const output = weaver.tryFormatWithSchema(userInput);
+if (output === null) {
+  console.log("Invalid input");
+} else {
+  console.log("Rendered:", output);
+}
+```
+
+**Async validation:**
+
+```typescript
+const result = await weaver.validateSchemaAsync({ name: "Alice", age: 30 });
+const output = await weaver.formatWithSchemaAsync({ name: "Alice", age: 30 });
+```
+
+> [!NOTE]
+> Prompt Weaver supports any Standard Schema-compatible validation library, including:
+> - **Zod** (3.24+)
+> - **Valibot** (1.0+)
+> - **ArkType** (2.0+)
+> - And other libraries that implement the [Standard Schema](https://standardschema.dev) specification
 
 ## 🧩 Template Composition
 
@@ -611,9 +775,16 @@ const weaver = new PromptWeaver(composed);
 Or create directly:
 
 ```typescript
+import { z } from 'zod';
+
+const schema = z.object({
+  title: z.string(),
+  content: z.string(),
+});
+
 const weaver = PromptWeaver.composeAndCreate(
   [header, body, footer],
-  { strict: true }
+  { schema }
 );
 ```
 
@@ -646,15 +817,22 @@ weaver.setPartial("header", "<header>{{title}}</header>");
 Enhanced error messages with context:
 
 ```typescript
-import { ValidationError, TemplateCompilationError } from "@iqai/prompt-weaver";
+import { SchemaValidationError, TemplateCompilationError } from "@iqai/prompt-weaver";
+import { z } from 'zod';
+
+const schema = z.object({
+  name: z.string(),
+  age: z.number(),
+});
 
 try {
-  const weaver = new PromptWeaver(template);
-  const output = weaver.format(data);
+  const weaver = new PromptWeaver(template, { schema });
+  const output = weaver.formatWithSchema({ name: "Alice", age: 30 });
 } catch (error) {
-  if (error instanceof ValidationError) {
+  if (error instanceof SchemaValidationError) {
+    console.error("Validation failed:", error.issues);
     console.error(error.getFormattedMessage());
-    // "Missing required variable: name (field: name, line: 5)"
+    // Detailed validation error messages from your schema library
   } else if (error instanceof TemplateCompilationError) {
     console.error(error.getFormattedMessage());
     // "Template syntax error (line: 10, column: 5)"
