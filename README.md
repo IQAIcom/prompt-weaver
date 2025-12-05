@@ -108,73 +108,6 @@ This example demonstrates:
 - 📅 Date formatting and relative time
 - 💰 Number formatting
 
-### 🔄 Understanding Builder vs Weaver
-
-**PromptWeaver** is a template engine that renders Handlebars templates with data:
-- Use when you have template strings with variables (`{{variable}}`)
-- Best for declarative, template-based rendering
-- Supports all transformers, helpers, and advanced features
-
-**PromptBuilder** is a fluent API for programmatically constructing prompts:
-- Use when building prompts dynamically in code
-- Best for imperative, code-based construction
-- Can convert to PromptWeaver for template rendering
-
-**They work together!** Build programmatically with Builder, then convert to Weaver for rendering:
-
-```typescript
-import { PromptBuilder } from "@iqai/prompt-weaver";
-
-const builder = new PromptBuilder()
-  .section("Introduction", "Hello {{name}}!")
-  .section("Details", "Balance: {{balance currency}}");
-
-// Convert to PromptWeaver and render with data
-const weaver = builder.toPromptWeaver();
-const output = weaver.format({
-  name: "Alice",
-  balance: 1234.56,
-});
-```
-
-### 📝 Basic Usage with PromptWeaver
-
-```typescript
-import { PromptWeaver } from "@iqai/prompt-weaver";
-
-const template = "Hello, {{name}}! Your balance is {{balance currency}}.";
-
-const weaver = new PromptWeaver(template);
-const output = weaver.format({
-  name: "Alice",
-  balance: 1234.56,
-});
-
-console.log(output);
-// "Hello, Alice! Your balance is $1,234.56."
-```
-
-### 🏗️ Basic Usage with PromptBuilder
-
-```typescript
-import { PromptBuilder } from "@iqai/prompt-weaver";
-
-const builder = new PromptBuilder()
-  .heading(1, "User Profile")
-  .section("Personal Information", "Name: {{name}}\nEmail: {{email}}")
-  .list(["Feature 1", "Feature 2", "Feature 3"]);
-
-// Option 1: Get the template string
-const template = builder.build();
-
-// Option 2: Convert directly to PromptWeaver and render
-const weaver = builder.toPromptWeaver();
-const output = weaver.format({
-  name: "Alice",
-  email: "alice@example.com",
-});
-```
-
 ### 🔷 With TypeScript Types
 
 ```typescript
@@ -228,82 +161,60 @@ interface PromptWeaverOptions {
 const output = weaver.format({ name: "Alice", value: 100 });
 ```
 
-**`validateSchema(data)`** - Validate data against schema (requires schema option)
-```typescript
-import { z } from 'zod';
-
-const schema = z.object({
-  name: z.string(),
-  age: z.number().positive(),
-});
-
-const weaver = new PromptWeaver(template, { schema });
-const result = weaver.validateSchema({ name: "Alice", age: 30 });
-if (result.success) {
-  console.log("Valid data:", result.data);
-} else {
-  console.error("Validation errors:", result.issues);
-}
-```
-
-**`formatWithSchema(data)`** - Format with automatic validation
-```typescript
-// Validates and renders in one step
-// Throws SchemaValidationError if validation fails
-const output = weaver.formatWithSchema({ name: "Alice", age: 30 });
-```
-
-**`extractVariables()`** - Get required variables from template
-```typescript
-const variables = weaver.extractVariables();
-console.log(Array.from(variables)); // ["name", "balance"]
-```
-
-**`setPartial(name, templateSource)`** - Register a partial template
-```typescript
-weaver.setPartial("header", "<header>{{title}}</header>");
-```
-
-**`getMetadata()`** - Get template metadata
-```typescript
-const metadata = weaver.getMetadata();
-console.log(metadata.variables); // ["name", "balance"]
-console.log(metadata.helpers); // ["currency", "if"]
-console.log(metadata.partials); // ["header"]
-```
-
+**`validateSchema(data)`** - Validate data against schema (requires schema option)  
+**`formatWithSchema(data)`** - Format with automatic validation (throws on failure)  
+**`tryFormatWithSchema(data)`** - Format with validation (returns null on failure)  
+**`extractVariables()`** - Get required variables from template  
+**`setPartial(name, templateSource)`** - Register a partial template  
+**`getMetadata()`** - Get template metadata  
 **`compose(templateSources, separator?)`** - Compose multiple templates (static)
+
+See [Validation](#-validation) section for detailed validation examples.
+
+**Quick examples:**
 ```typescript
+// Extract variables
+const variables = weaver.extractVariables(); // ["name", "balance"]
+
+// Register partials
+weaver.setPartial("header", "<header>{{title}}</header>");
+
+// Get metadata
+const metadata = weaver.getMetadata();
+console.log(metadata.variables, metadata.helpers, metadata.partials);
+
+// Compose templates
 const composed = PromptWeaver.compose([template1, template2], "\n\n");
 const weaver = new PromptWeaver(composed);
 ```
 
 ## 🤝 Using Builder and Weaver Together
 
-The Builder and Weaver are designed to work seamlessly together. Here's a complete workflow:
+**PromptWeaver** renders Handlebars templates with data - use for static template strings with variables (`{{variable}}`).  
+**PromptBuilder** builds prompts programmatically - use for dynamic construction in code.  
+**They work together!** Build with Builder, then convert to Weaver for rendering.
 
 ### Workflow: Build → Convert → Render
 
 ```typescript
 import { PromptBuilder } from "@iqai/prompt-weaver";
 
-// Step 1: Build the template structure programmatically
+// Step 1: Build programmatically
 const builder = new PromptBuilder()
   .heading(1, "User Dashboard")
   .section("Welcome", "Hello {{userName}}!")
   .section("Account Info", "Your balance is {{balance currency}}")
   .conditional(isPremium, "⭐ Premium Member", "Upgrade to Premium");
 
-// Step 2: Convert to PromptWeaver for template rendering
+// Step 2: Convert to PromptWeaver for rendering
 const weaver = builder.toPromptWeaver();
 
 // Step 3: Render with data (can be called multiple times)
 const output1 = weaver.format({ userName: "Alice", balance: 1000, isPremium: true });
 const output2 = weaver.format({ userName: "Bob", balance: 500, isPremium: false });
 
-// Step 4: Validate data before rendering (with schema)
+// Step 4: Optional - Validate with schema
 import { z } from 'zod';
-
 const schema = z.object({
   userName: z.string(),
   balance: z.number(),
@@ -317,50 +228,26 @@ if (!validation.success) {
 }
 ```
 
-### Key Integration Points
-
-1. **`builder.toPromptWeaver(options?)`** - Converts the built prompt to a PromptWeaver instance
-2. **`builder.build()`** - Returns the template string, which can be used with `new PromptWeaver()`
-3. **Schema validation** - Use `builder.toPromptWeaver({ schema })` and then call `weaver.validateSchema(data)`
-
 ### When to Use Each Approach
 
 | Scenario | Use Builder | Use Weaver | Use Both |
 |----------|-------------|------------|----------|
 | Static template strings | ❌ | ✅ | ❌ |
 | Dynamic prompt construction | ✅ | ❌ | ✅ |
-| Conditional sections | ✅ | ✅* | ✅ |
 | Template rendering with data | ❌ | ✅ | ✅ |
 | Reusable templates | ❌ | ✅ | ✅ |
 | Complex programmatic logic | ✅ | ❌ | ✅ |
 
-*Weaver supports conditionals via Handlebars `{{#if}}` blocks, but Builder's conditional() is better for code-based logic
-
 ## 🎨 Built-in Transformers
-
-### Formatters
-
-Format values for display:
-
-```handlebars
-{{price currency}}        <!-- $1,234.56 -->
-{{price price}}           <!-- $0.1234 -->
-{{percentage percent}}     <!-- 12.34% -->
-{{change signedPercent}}  <!-- +12.34% -->
-{{amount signedCurrency}} <!-- +$1,234.56 -->
-{{count integer}}         <!-- 1,234 -->
-{{value number}}          <!-- 1,234.56 -->
-{{large compact}}        <!-- 1.2K, 3.4M, 5.6B -->
-{{text upper}}            <!-- UPPERCASE -->
-{{text lower}}            <!-- lowercase -->
-{{text capitalize}}      <!-- Capitalized -->
-{{text truncate}}        <!-- Truncated... -->
-{{data json}}            <!-- JSON string -->
-```
 
 ### 📝 String Transformers
 
 ```handlebars
+{{text upper}}            <!-- UPPERCASE -->
+{{text lower}}            <!-- lowercase -->
+{{text capitalize}}      <!-- Capitalized -->
+{{text truncate}}        <!-- Truncated... -->
+{{text ellipsis 50}}     <!-- Truncate with ellipsis -->
 {{text replace "old" "new"}}           <!-- Replace text -->
 {{text replaceAll " " "-"}}           <!-- Replace all occurrences -->
 {{text regexReplace "\\d+" "NUM"}}    <!-- Regex replace -->
@@ -377,7 +264,7 @@ Format values for display:
 {{text snakeCase}}                    <!-- snake_case -->
 {{word pluralize}}                    <!-- Pluralize -->
 {{words singularize}}                 <!-- Singularize -->
-{{text ellipsis 50}}                  <!-- Truncate with ellipsis -->
+{{data json}}                         <!-- JSON string -->
 ```
 
 ### 📅 Date/Time Transformers
@@ -452,37 +339,35 @@ Format values for display:
 {{isDefined value}}                  <!-- Check defined -->
 ```
 
-### ➕ Arithmetic Transformers
+### 💰 Number & Format Transformers
 
 ```handlebars
-{{increment value}}                   <!-- Add 1 -->
-{{add a b}}                          <!-- Addition -->
-{{subtract a b}}                     <!-- Subtraction -->
-{{multiply a b}}                     <!-- Multiplication -->
-{{divide a b}}                       <!-- Division -->
+{{price currency}}        <!-- $1,234.56 -->
+{{price price}}           <!-- $0.1234 -->
+{{percentage percent}}     <!-- 12.34% -->
+{{change signedPercent}}  <!-- +12.34% -->
+{{amount signedCurrency}} <!-- +$1,234.56 -->
+{{count integer}}         <!-- 1,234 -->
+{{value number}}          <!-- 1,234.56 -->
+{{large compact}}        <!-- 1.2K, 3.4M, 5.6B -->
+{{increment value}}       <!-- Add 1 -->
+{{add a b}}              <!-- Addition -->
+{{subtract a b}}         <!-- Subtraction -->
+{{multiply a b}}         <!-- Multiplication -->
+{{divide a b}}           <!-- Division -->
 ```
 
-### ⚖️ Comparison Transformers
+### ⚖️ Comparison & Logical Transformers
 
 ```handlebars
-{{eq a b}}                           <!-- Equal -->
-{{ne a b}}                           <!-- Not equal -->
-{{gt a b}}                           <!-- Greater than -->
-{{gte a b}}                          <!-- Greater than or equal -->
-{{lt a b}}                           <!-- Less than -->
-{{lte a b}}                           <!-- Less than or equal -->
-```
-
-### 🔗 Logical Transformers
-
-```handlebars
-{{#and condition1 condition2}}
-  Content
-{{/and}}
-
-{{#or condition1 condition2}}
-  Content
-{{/or}}
+{{eq a b}}               <!-- Equal -->
+{{ne a b}}               <!-- Not equal -->
+{{gt a b}}               <!-- Greater than -->
+{{gte a b}}              <!-- Greater than or equal -->
+{{lt a b}}               <!-- Less than -->
+{{lte a b}}              <!-- Less than or equal -->
+{{#and condition1 condition2}} Content {{/and}}
+{{#or condition1 condition2}} Content {{/or}}
 ```
 
 ## 🏗️ Prompt Builder API
@@ -519,25 +404,6 @@ const output = weaver.format({
 const templateString = builder.build();
 ```
 
-### When to Use Builder vs Weaver
-
-**Use PromptBuilder when:**
-- Building prompts dynamically based on runtime conditions
-- Constructing prompts programmatically with complex logic
-- You want a fluent, chainable API for prompt construction
-- The prompt structure changes based on user input or application state
-
-**Use PromptWeaver when:**
-- You have static template strings with variables
-- You need to render templates multiple times with different data
-- You want to leverage advanced Handlebars features (helpers, partials, conditionals)
-- You need template validation and metadata extraction
-
-**Use Both Together:**
-- Build the template structure with Builder
-- Convert to Weaver for rendering and validation
-- Best of both worlds: programmatic construction + template rendering
-
 ### Builder Methods
 
 All methods return `this` for method chaining.
@@ -565,43 +431,24 @@ All methods return `this` for method chaining.
 
 ## 🎯 Custom Transformers
 
-Register custom transformers with or without options:
-
-### Simple Transformer (No Options)
+Register custom transformers. The first parameter is always the value being transformed, followed by any options:
 
 ```typescript
 import { registerTransformer } from "@iqai/prompt-weaver";
 
+// Simple transformer (no options)
 registerTransformer("uppercase", (value) => {
   return String(value).toUpperCase();
 });
+// Use: {{name uppercase}}
 
-// Use in template
-// {{name uppercase}}
-```
-
-### Transformer with Options
-
-Transformers can accept options as additional parameters. The first parameter is always the value being transformed, followed by any options:
-
-```typescript
-import { registerTransformer } from "@iqai/prompt-weaver";
-
-// Transformer with one option (like ellipsis)
+// Transformer with one option
 registerTransformer("truncate", (value, maxLength) => {
   const str = String(value);
   const length = Number(maxLength) || 50;
   return str.length > length ? `${str.slice(0, length - 3)}...` : str;
 });
-
-// Use in template
-// {{longText truncate 100}}
-```
-
-### Transformer with Multiple Options
-
-```typescript
-import { registerTransformer } from "@iqai/prompt-weaver";
+// Use: {{longText truncate 100}}
 
 // Transformer with multiple options
 registerTransformer("pad", (value, length, padString, direction) => {
@@ -609,47 +456,17 @@ registerTransformer("pad", (value, length, padString, direction) => {
   const len = Number(length) || 10;
   const pad = String(padString || " ");
   const dir = String(direction || "end");
-  
-  if (dir === "start") {
-    return str.padStart(len, pad);
-  }
-  return str.padEnd(len, pad);
+  return dir === "start" ? str.padStart(len, pad) : str.padEnd(len, pad);
 });
-
-// Use in template
-// {{text pad 10 "0" "start"}}  <!-- Left pad with zeros -->
-// {{text pad 10 "-" "end"}}    <!-- Right pad with dashes -->
+// Use: {{text pad 10 "0" "start"}}  <!-- Left pad with zeros -->
 ```
 
-### Transformer with Optional Options
-
-```typescript
-import { registerTransformer } from "@iqai/prompt-weaver";
-
-// Transformer with optional options
-registerTransformer("repeat", (value, count, separator) => {
-  const str = String(value);
-  const times = Number(count) || 1;
-  const sep = separator !== undefined ? String(separator) : "";
-  
-  return Array(times).fill(str).join(sep);
-});
-
-// Use in template
-// {{word repeat 3}}           <!-- "wordwordword" -->
-// {{word repeat 3 ","}}      <!-- "word,word,word" -->
-```
-
-### Using the Registry Directly
-
-You can also use the registry directly for more control:
+**Using the registry directly** (for scoped registries or metadata):
 
 ```typescript
 import { TransformerRegistry } from "@iqai/prompt-weaver";
 
 const registry = TransformerRegistry.createScoped();
-
-// Register transformer with options
 registry.registerTransformer("customHelper", (value, option1, option2) => {
   return `Custom: ${value} (${option1}, ${option2})`;
 }, {
@@ -657,35 +474,7 @@ registry.registerTransformer("customHelper", (value, option1, option2) => {
   version: "1.0.0"
 });
 
-const weaver = new PromptWeaver(template, {
-  registry: registry,
-});
-
-// Use in template
-// {{data customHelper "opt1" "opt2"}}
-```
-
-### Transformer Options Pattern
-
-When creating transformers with options, follow this pattern:
-
-1. **First parameter**: Always the value being transformed
-2. **Subsequent parameters**: Options passed in order from the template
-3. **Optional options**: Use default values or check for `undefined`
-4. **Type conversion**: Convert options to the expected types (Number, String, etc.)
-
-Example matching the built-in `ellipsis` transformer:
-
-```typescript
-registerTransformer("ellipsis", (str: string, maxLength: number) => {
-  const s = String(str);
-  const length = Number(maxLength) || 50; // Default to 50 if not provided
-  return s.length > length ? `${s.slice(0, length - 3)}...` : s;
-});
-
-// Use in template
-// {{notes ellipsis 100}}  <!-- Truncate to 100 characters -->
-// {{notes ellipsis}}      <!-- Uses default 50 characters -->
+const weaver = new PromptWeaver(template, { registry });
 ```
 
 ## ✅ Validation
