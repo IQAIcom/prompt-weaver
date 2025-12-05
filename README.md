@@ -2,240 +2,171 @@
 
 <img src="./logo.png" alt="Prompt Weaver Logo" width="100">
 
-# Prompt Weaver - Craft Powerful Prompts with Ease
+# Prompt Weaver
 
-A powerful, extensible template engine for building prompts. Prompt Weaver provides a comprehensive set of transformers, validation utilities, and a fluent API for programmatic prompt construction.
+**Craft Powerful, Type-Safe LLM Prompts with Ease**
+
+A powerful, extensible template engine built for the AI era. Prompt Weaver combines the flexibility of Handlebars with the safety of TypeScript and Zod/Standard Schema.
+
+[Features](#-features) • [Quick Start](#-quick-start) • [The Two Approaches](#️-the-two-approaches-builder-vs-weaver) • [Templating Syntax](#-templating-syntax-handlebars) • [Transformers](#️-built-in-transformers) • [Type Safety](#-validation--type-safety)
 
 </div>
 
+-----
+
+## 📖 Introduction
+
+Writing prompts for LLMs often involves messy string concatenation, zero type safety, and repetitive code. **Prompt Weaver** solves this by treating prompts like software artifacts.
+
+It allows you to build dynamic prompts using **templates**, validate input data with **schemas** (Zod, Valibot, etc.), and transform data (dates, currency, arrays) directly within the prompt.
+
 ## ✨ Features
 
-- 🎯 **Extensible Plugin System** - Register custom transformers and helpers
-- 🔧 **Rich Built-in Transformers** - String, date, object, collection, and conditional helpers
-- 🎨 **Powerful Templating** - Conditional blocks (`{{#if}}`, `{{#unless}}`), loops (`{{#each}}`), context switching (`{{#with}}`), and switch/case logic
-- 🧩 **Template Partials** - Reusable template fragments for DRY code
-- ✅ **Validation & Type Safety** - Validate templates and data with Standard Schema (Zod, Valibot, ArkType, etc.)
-- 🔷 **Schema-Based Type Inference** - Automatic TypeScript type inference from validation schemas
-- 🏗️ **Fluent Builder API** - Programmatically build prompts with a clean API
-- 📝 **Template Composition** - Compose multiple templates together
-- 🎨 **Full TypeScript Support** - Manual types or automatic inference from schemas
+- **🎨 Powerful Templating**: Logic-rich templates with loops (`{{#each}}`), conditionals (`{{#if}}`), and switch/case logic.
+
+- **✅ Type Safety & Validation**: First-class support for **Standard Schema** (Zod, ArkType, Valibot). Get automatic TypeScript type inference.
+
+- **🔧 Rich Toolset**: Built-in transformers for Dates, Strings, JSON, Currencies, and Arrays.
+
+- **🏗️ Fluent Builder API**: Construct prompts programmatically using a chainable JavaScript/TypeScript API.
+
+- **🧩 Reusable Partials**: Don't repeat yourself—compose prompts from reusable fragments (headers, footers, rules).
+
+- **🎯 Extensible**: Create custom transformers and helpers to suit your specific domain.
+
+-----
 
 ## 📦 Installation
 
 ```bash
 npm install @iqai/prompt-weaver
+
 # or
+
 pnpm add @iqai/prompt-weaver
+
 # or
+
 yarn add @iqai/prompt-weaver
 ```
 
+-----
+
 ## 🚀 Quick Start
 
-### A Quick Taste: Complex Prompt Example
+### 1. The "Hello World"
 
-Here's a short but powerful example showcasing Prompt Weaver's capabilities:
+Start simple. Define a template, inject data, and get a string.
 
 ```typescript
 import { PromptWeaver } from "@iqai/prompt-weaver";
 
-const template = `
-You are an AI assistant helping {{userName}} with their {{taskType}}.
+// 1. Define a template with variables and a transformer
+const template = "Hello {{name}}, your balance is {{balance currency}}.";
 
-## Account Summary
-- **Balance**: {{balance currency}}
-- **Member Since**: {{memberSince formatDate "MMMM YYYY"}}
-- **Status**: {{#if isPremium}}⭐ Premium{{else}}Standard{{/if}}
+// 2. Initialize Weaver
+const weaver = new PromptWeaver(template);
+
+// 3. Render
+const result = weaver.format({
+  name: "Alice",
+  balance: 1234.56
+});
+
+console.log(result);
+// Output: "Hello Alice, your balance is $1,234.56."
+```
+
+### 2. The Feature Showcase
+
+Here is a more complex example showing loops, conditionals, and formatting.
+
+<details>
+<summary><strong>View Complex Example Code</strong></summary>
+
+```typescript
+const template = `
+You are helping {{userName}}.
 
 ## Task Details
-{{#if hasDeadline}}
-⚠️ **Deadline**: {{deadline relativeTime}} ({{deadline formatDate "MMM DD, YYYY"}})
-{{/if}}
+
+- **Deadline**: {{deadline relativeTime}} ({{deadline formatDate "MMM DD"}})
+- **Status**: {{#if isPremium}}⭐ Premium{{else}}Standard{{/if}}
 
 ## Requirements
+
 {{#each requirements}}
 {{increment @index}}. {{this}}
 {{/each}}
-
-{{#if notes}}
-## Additional Notes
-{{notes ellipsis 100}}
-{{/if}}
 `;
 
 const weaver = new PromptWeaver(template);
+
 const output = weaver.format({
   userName: "Alice",
-  taskType: "project planning",
-  balance: 1234.56,
-  memberSince: new Date("2023-06-15"),
   isPremium: true,
-  hasDeadline: true,
   deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days from now
-  requirements: [
-    "Create detailed project timeline",
-    "Identify potential risks",
-    "Estimate resource requirements"
-  ],
-  notes: "This is a high-priority project that requires careful attention to detail and stakeholder communication. We need to ensure all deliverables are met on time while maintaining quality standards. Regular check-ins with the team will be essential to track progress and address any blockers early."
+  requirements: ["Plan project", "Review code"]
 });
-
-console.log(output);
 ```
 
 **Output:**
-```ellipsis
-You are an AI assistant helping Alice with their project planning.
 
-## Account Summary
-- **Balance**: $1,234.56
-- **Member Since**: June 2023
-- **Status**: ⭐ Premium
+```text
+You are helping Alice.
 
 ## Task Details
-⚠️ **Deadline**: in 7 days (Dec 15, 2024)
+
+- **Deadline**: in 7 days (Dec 12)
+- **Status**: ⭐ Premium
 
 ## Requirements
-1. Create detailed project timeline
-2. Identify potential risks
-3. Estimate resource requirements
 
-## Additional Notes
-This is a high-priority project that requires careful attention to detail and stakeholder communication. We need to ensure all deliv...
+1. Plan project
+2. Review code
 ```
 
-This example demonstrates:
-- ✨ Variable interpolation with transformers (`currency`, `formatDate`, `relativeTime`, `ellipsis`)
-- 🔀 Conditional blocks (`{{#if}}`)
-- 🔁 Loops with indexing (`{{#each}}` with `{{increment @index}}`)
-- 📅 Date formatting and relative time
-- 💰 Number formatting
+</details>
 
-> 💡 **More Examples**: Check out the [Examples](#-examples) section for real-world use cases including code review assistants, data analysis prompts, content generation, and more.
+-----
 
-## 🔧 Core API
+## ⚖️ The Two Approaches: Builder vs. Weaver
 
-### PromptWeaver Class
+Prompt Weaver offers two ways to create prompts. You can use them separately or together.
 
-The main class for rendering Prompt Weaver templates.
+| Feature | **PromptWeaver** | **PromptBuilder** |
+| :--- | :--- | :--- |
+| **Best For...** | Static templates, recurring tasks, separating content from code. | Dynamic logic, building prompts on the fly based on runtime conditions. |
+| **Input** | String template (Handlebars syntax). | Method chaining (Fluent API). |
+| **Example** | `new PromptWeaver("Hello {{name}}")` | `new PromptBuilder().text("Hello").text(name)` |
 
-#### Constructor
+### Using the Builder (Fluent API)
 
-```typescript
-new PromptWeaver(templateSource, options?)
-```
-
-**Parameters:**
-- `templateSource`: Template string or imported template module
-- `options`: Optional configuration object
-
-**Options:**
-```typescript
-interface PromptWeaverOptions {
-  registry?: TransformerRegistry; // Custom transformer registry (defaults to global)
-  partials?: Record<string, string>; // Partial templates
-  schema?: StandardSchemaV1; // Standard Schema validator (Zod, Valibot, ArkType, etc.)
-}
-```
-
-#### Methods
-
-**`format(data)`** - Render the template with data
-```typescript
-const output = weaver.format({ name: "Alice", value: 100 });
-```
-
-**`validateSchema(data)`** - Validate data against schema (requires schema option)  
-**`formatWithSchema(data)`** - Format with automatic validation (throws on failure)  
-**`tryFormatWithSchema(data)`** - Format with validation (returns null on failure)  
-**`extractVariables()`** - Get required variables from template  
-**`setPartial(name, templateSource)`** - Register a partial template  
-**`getMetadata()`** - Get template metadata  
-**`compose(templateSources, separator?)`** - Compose multiple templates (static)
-
-See [Validation](#-validation) section for detailed validation examples.
-
-**Quick examples:**
-```typescript
-// Extract variables
-const variables = weaver.extractVariables(); // ["name", "balance"]
-
-// Register partials
-weaver.setPartial("header", "<header>{{title}}</header>");
-
-// Get metadata
-const metadata = weaver.getMetadata();
-console.log(metadata.variables, metadata.helpers, metadata.partials);
-
-// Compose templates
-const composed = PromptWeaver.compose([template1, template2], "\n\n");
-const weaver = new PromptWeaver(composed);
-```
-
-## 🏗️ Prompt Builder API
-
-Build prompts programmatically with a fluent API. The Builder is perfect for dynamically constructing prompts in code, then you can convert it to a PromptWeaver instance for rendering with data.
-
-### Basic Example
+Perfect for when you need to construct a prompt logically in your code.
 
 ```typescript
 import { PromptBuilder } from "@iqai/prompt-weaver";
 
 const builder = new PromptBuilder()
   .heading(1, "User Profile")
-  .section("Personal Information", "Name: {{name}}\nEmail: {{email}}")
-  .list(["Item 1", "Item 2", "Item 3"])
-  .table(
-    ["Name", "Age", "City"],
-    [
-      ["Alice", "30", "New York"],
-      ["Bob", "25", "London"],
-    ]
-  )
-  .conditional(user.isPremium, "Premium features enabled", "Upgrade to premium")
-  .code("function example() { return 'hello'; }", "javascript");
+  .section("Info", "Name: {{name}}")
+  .list(["Rule 1", "Rule 2"])
+  .conditional(true, "✅ Verified", "❌ Unverified");
 
-// Convert to PromptWeaver and render with data
+// Convert to Weaver to render data
 const weaver = builder.toPromptWeaver();
-const output = weaver.format({
-  name: "Alice",
-  email: "alice@example.com",
-});
-
-// Or just get the template string
-const templateString = builder.build();
+const output = weaver.format({ name: "Alice" });
 ```
 
-### Builder Methods
+### When to Use Each Approach
 
-All methods return `this` for method chaining.
-
-**Content Methods:**
-- `.section(title?, content?)` - Add a section (content can be string or function)
-- `.text(text)` - Add raw text content
-- `.code(code, language?)` - Add code block with optional language
-- `.list(items, ordered?)` - Add list (ordered or unordered)
-- `.table(headers, rows)` - Add markdown table
-- `.heading(level, text)` - Add heading (level 1-6)
-- `.quote(text)` - Add blockquote
-- `.separator(char?)` - Add separator line (default: "---")
-
-**Control Flow Methods:**
-- `.conditional(condition, ifTrue, ifFalse?)` - Add conditional content based on boolean
-- `.loop(items, callback)` - Add content by iterating over items
-
-**Utility Methods:**
-- `.build()` - Build final prompt string
-- `.toPromptWeaver(options?)` - Convert to PromptWeaver instance for rendering
-- `.clear()` - Clear all content and start fresh
-
-**Validation:** Use `.toPromptWeaver({ schema })` and then call `weaver.validateSchema(data)` on the returned instance.
-
-## 🤝 Using Builder and Weaver Together
-
-**PromptWeaver** renders Handlebars templates with data - use for static template strings with variables (`{{variable}}`).  
-**PromptBuilder** builds prompts programmatically - use for dynamic construction in code.  
-**They work together!** Build with Builder, then convert to Weaver for rendering.
+| Scenario | Use Builder | Use Weaver | Use Both |
+|----------|-------------|------------|----------|
+| Static template strings | ❌ | ✅ | ❌ |
+| Dynamic prompt construction | ✅ | ❌ | ✅ |
+| Template rendering with data | ❌ | ✅ | ✅ |
+| Reusable templates | ❌ | ✅ | ✅ |
+| Complex programmatic logic | ✅ | ❌ | ✅ |
 
 ### Workflow: Build → Convert → Render
 
@@ -273,212 +204,87 @@ const validatedOutput = weaverWithSchema.formatWithSchema({
   balance: 1000, 
   isPremium: true 
 });
-
-// Or validate separately (also type-safe)
-const validation = weaverWithSchema.validateSchema({ userName: "Alice", balance: 1000, isPremium: true });
-if (!validation.success) {
-  console.error("Validation errors:", validation.issues);
-} else {
-  // validation.data is automatically typed based on schema
-  console.log(validation.data.userName);  // ✅ TypeScript knows this is a string
-}
 ```
 
-### When to Use Each Approach
+-----
 
-| Scenario | Use Builder | Use Weaver | Use Both |
-|----------|-------------|------------|----------|
-| Static template strings | ❌ | ✅ | ❌ |
-| Dynamic prompt construction | ✅ | ❌ | ✅ |
-| Template rendering with data | ❌ | ✅ | ✅ |
-| Reusable templates | ❌ | ✅ | ✅ |
-| Complex programmatic logic | ✅ | ❌ | ✅ |
+## 🎨 Templating Syntax (Handlebars)
 
-## 🎨 Built-in Transformers
+Prompt Weaver utilizes Handlebars syntax for control flow and data formatting.
 
-### 📝 String Transformers
+### Variable Interpolation & Transformers
+
+Variables are interpolated using `{{variableName}}`. You can format variables in different ways by adding **transformers** after the variable name:
 
 ```handlebars
-{{text upper}}            <!-- UPPERCASE -->
-{{text lower}}            <!-- lowercase -->
-{{text capitalize}}      <!-- Capitalized -->
-{{text truncate}}        <!-- Truncated... -->
-{{text ellipsis 50}}     <!-- Truncate with ellipsis -->
-{{text replace "old" "new"}}           <!-- Replace text -->
-{{text replaceAll " " "-"}}           <!-- Replace all occurrences -->
-{{text regexReplace "\\d+" "NUM"}}    <!-- Regex replace -->
-{{text slice 0 10}}                    <!-- Slice string -->
-{{text substring 5 10}}                <!-- Substring -->
-{{text padStart 10 "0"}}              <!-- Pad start -->
-{{text padEnd 10 " "}}                <!-- Pad end -->
-{{text split ","}}                    <!-- Split into array -->
-{{array join ", "}}                   <!-- Join array -->
-{{text trim}}                          <!-- Trim whitespace -->
-{{text slugify}}                       <!-- Convert to slug -->
-{{text kebabCase}}                    <!-- kebab-case -->
-{{text camelCase}}                     <!-- camelCase -->
-{{text snakeCase}}                    <!-- snake_case -->
-{{word pluralize}}                    <!-- Pluralize -->
-{{words singularize}}                 <!-- Singularize -->
-{{data json}}                         <!-- JSON string -->
+{{variableName transformer}}
+{{variableName transformer arg1 arg2}}
 ```
 
-### 📅 Date/Time Transformers
-
+**Basic variable:**
 ```handlebars
-{{date formatDate "YYYY-MM-DD"}}      <!-- Format date -->
-{{date formatTime}}                   <!-- Format time -->
-{{date formatDateTime}}               <!-- Format date and time -->
-{{date relativeTime}}                 <!-- "2 hours ago" -->
-{{date isToday}}                      <!-- Boolean -->
-{{date isPast}}                       <!-- Boolean -->
-{{date isFuture}}                     <!-- Boolean -->
-{{date addDays 7}}                    <!-- Add days -->
-{{date subtractDays 3}}               <!-- Subtract days -->
-{{date addHours 2}}                   <!-- Add hours -->
-{{date timestamp}}                    <!-- Milliseconds timestamp -->
-{{date unixTimestamp}}                <!-- Unix timestamp -->
+Hello {{name}}!
 ```
 
-### 📦 Object Transformers
-
+**With transformer:**
 ```handlebars
-{{get obj "key"}}                     <!-- Get property -->
-{{has obj "key"}}                     <!-- Check property -->
-{{keys obj}}                          <!-- Get keys array -->
-{{values obj}}                        <!-- Get values array -->
-{{pick obj "key1" "key2"}}           <!-- Pick properties -->
-{{omit obj "key1" "key2"}}           <!-- Omit properties -->
-{{merge obj1 obj2}}                  <!-- Merge objects -->
-{{defaults obj defaults}}            <!-- Apply defaults -->
-{{deepGet obj "nested.property"}}    <!-- Nested access -->
-{{isEmpty value}}                    <!-- Check if empty -->
-{{isNotEmpty value}}                 <!-- Check if not empty -->
+Hello {{name capitalize}}!          <!-- Capitalizes the name -->
+Your balance is {{balance currency}}  <!-- Formats as currency: $1,234.56 -->
+Due {{deadline relativeTime}}        <!-- Shows relative time: "in 3 days" -->
 ```
 
-### 📊 Collection Transformers
-
+**Transformers with arguments:**
 ```handlebars
-{{filter array "property"}}           <!-- Filter array -->
-{{map array "property"}}              <!-- Map array -->
-{{find array "property" value}}       <!-- Find item -->
-{{findIndex array "property" value}} <!-- Find index -->
-{{includes array value}}              <!-- Check inclusion -->
-{{sort array "property"}}             <!-- Sort array -->
-{{reverse array}}                     <!-- Reverse array -->
-{{first array}}                       <!-- First item -->
-{{last array}}                        <!-- Last item -->
-{{nth array 2}}                       <!-- Nth item -->
-{{unique array}}                      <!-- Unique values -->
-{{groupBy array "property"}}         <!-- Group by property -->
-{{partition array "property"}}       <!-- Partition array -->
-{{chunk array 3}}                    <!-- Chunk array -->
-{{flatten array}}                     <!-- Flatten array -->
-{{arraySlice array 0 5}}              <!-- Slice array -->
+{{text ellipsis 50}}                  <!-- Truncate to 50 chars -->
+{{date formatDate "YYYY-MM-DD"}}      <!-- Format date with pattern -->
+{{text replace "old" "new"}}          <!-- Replace text -->
 ```
 
-### 🔀 Conditional Transformers
-
+**Chaining transformers in expressions:**
 ```handlebars
-{{#if condition}}
-  Content
-{{/if}}
-
-{{#unless condition}}
-  Content
-{{/unless}}
-
-{{ifElse condition "yes" "no"}}      <!-- Ternary -->
-{{coalesce value1 value2 value3}}   <!-- First non-null -->
-{{default value "default"}}          <!-- Default value -->
-{{exists value}}                      <!-- Check existence -->
-{{isDefined value}}                  <!-- Check defined -->
+{{#each (sort (filter users "active") "name")}}
+  {{increment @index}}. {{name capitalize}} - {{balance currency}}
+{{/each}}
 ```
 
-### 💰 Number & Format Transformers
+Transformers allow you to format data directly within your templates without preprocessing. See the [Built-in Transformers](#️-built-in-transformers) section below for available options.
 
-```handlebars
-{{price currency}}        <!-- $1,234.56 -->
-{{price price}}           <!-- $0.1234 -->
-{{percentage percent}}     <!-- 12.34% -->
-{{change signedPercent}}  <!-- +12.34% -->
-{{amount signedCurrency}} <!-- +$1,234.56 -->
-{{count integer}}         <!-- 1,234 -->
-{{value number}}          <!-- 1,234.56 -->
-{{large compact}}        <!-- 1.2K, 3.4M, 5.6B -->
-{{increment value}}       <!-- Add 1 -->
-{{add a b}}              <!-- Addition -->
-{{subtract a b}}         <!-- Subtraction -->
-{{multiply a b}}         <!-- Multiplication -->
-{{divide a b}}           <!-- Division -->
-```
+### Loops
 
-### ⚖️ Comparison & Logical Transformers
-
-```handlebars
-{{eq a b}}               <!-- Equal -->
-{{ne a b}}               <!-- Not equal -->
-{{gt a b}}               <!-- Greater than -->
-{{gte a b}}              <!-- Greater than or equal -->
-{{lt a b}}               <!-- Less than -->
-{{lte a b}}              <!-- Less than or equal -->
-{{#and condition1 condition2}} Content {{/and}}
-{{#or condition1 condition2}} Content {{/or}}
-```
-
-## 🎨 Templating Features
-
-Prompt Weaver is built on Handlebars, providing powerful templating capabilities for dynamic prompt generation.
-
-### Block Helpers
-
-**Conditional Blocks:**
-```handlebars
-{{#if condition}}
-  Content when true
-{{else}}
-  Content when false
-{{/if}}
-
-{{#unless condition}}
-  Content when false
-{{/unless}}
-```
-
-**Loops:**
 ```handlebars
 {{#each items}}
   {{increment @index}}. {{this}}
-{{/each}}
-
-{{#each users}}
-  - {{name}} ({{email}})
 {{else}}
-  No users found
+  No items found.
 {{/each}}
 ```
 
-**Context Switching:**
+### Conditionals
+
+```handlebars
+{{#if isPremium}}
+  Premium Content
+{{else}}
+  Standard Content
+{{/if}}
+```
+
+### Switch/Case
+
+```handlebars
+{{#switch role}}
+  {{#case "admin"}} You are an Admin {{/case}}
+  {{#case "user"}} You are a User {{/case}}
+{{/switch}}
+```
+
+### Context Switching
+
 ```handlebars
 {{#with user}}
   Name: {{name}}
   Email: {{email}}
 {{/with}}
-```
-
-**Switch/Case Logic:**
-```handlebars
-{{#switch status}}
-  {{#case "active"}}
-    ✅ Active
-  {{/case}}
-  {{#case "pending"}}
-    ⏳ Pending
-  {{/case}}
-  {{#case "inactive"}}
-    ❌ Inactive
-  {{/case}}
-{{/switch}}
 ```
 
 ### Special Variables
@@ -490,70 +296,256 @@ Prompt Weaver is built on Handlebars, providing powerful templating capabilities
 - `@root` - Access root context from nested contexts
 - `this` - Current context value in loops
 
+### Partials (Reusable Fragments)
+
+Define common pieces (like headers) once and reuse them.
+
+```typescript
+const weaver = new PromptWeaver(mainTemplate, {
+  partials: {
+    header: "Role: {{role}}\nTask: {{task}}",
+    footer: "Answer in JSON format."
+  }
+});
+```
+
+Usage in template: `{{> header}}` or `{{> footer}}`.
+
+You can also register partials programmatically:
+
+```typescript
+const weaver = new PromptWeaver(mainTemplate);
+weaver.setPartial("header", "<header>{{title}}</header>");
+weaver.setPartial("footer", "<footer>Footer</footer>");
+```
+
+-----
+
+## 🛠️ Built-in Transformers
+
+Prompt Weaver comes with a massive library of transformers to format data directly inside your prompt.
+
+### 📝 String & Content
+
+<details>
+<summary>Expand String Transformers</summary>
+
+| Transformer | Example | Result |
+| :--- | :--- | :--- |
+| `upper` | `{{text upper}}` | HELLO |
+| `lower` | `{{text lower}}` | hello |
+| `capitalize` | `{{text capitalize}}` | Hello |
+| `ellipsis` | `{{text ellipsis 10}}` | Hello w... |
+| `json` | `{{data json}}` | `{"a":1}` |
+| `pluralize` | `{{word pluralize}}` | apples |
+
+📖 **[View all String Transformers →](TRANSFORMERS.md#-string--content-transformers)**
+
+</details>
+
+### 📅 Date & Time
+
+<details>
+<summary>Expand Date Transformers</summary>
+
+| Transformer | Example | Result |
+| :--- | :--- | :--- |
+| `formatDate` | `{{date formatDate "YYYY-MM-DD"}}` | 2023-12-25 |
+| `relativeTime` | `{{date relativeTime}}` | 2 hours ago |
+| `isToday` | `{{date isToday}}` | true/false |
+| `timestamp` | `{{date timestamp}}` | 1640995200000 |
+
+📖 **[View all Date Transformers →](TRANSFORMERS.md#-date--time-transformers)**
+
+</details>
+
+### 🔢 Math & Numbers
+
+<details>
+<summary>Expand Number Transformers</summary>
+
+| Transformer | Example | Result |
+| :--- | :--- | :--- |
+| `currency` | `{{price currency}}` | $1,234.56 |
+| `percent` | `{{val percentage}}` | 12.34% |
+| `compact` | `{{views large compact}}` | 1.2M |
+| `add` | `{{add 5 2}}` | 7 |
+
+📖 **[View all Number Transformers →](TRANSFORMERS.md#-math--number-transformers)**
+
+</details>
+
+### 📊 Collections (Arrays/Objects)
+
+<details>
+<summary>Expand Collection Transformers</summary>
+
+| Transformer | Example | Description |
+| :--- | :--- | :--- |
+| `filter` | `{{filter users "active"}}` | Filter array by property |
+| `map` | `{{map users "name"}}` | Extract property from objects |
+| `sort` | `{{sort items "price"}}` | Sort array |
+| `first` / `last` | `{{first items}}` | Get first/last item |
+| `pick` | `{{pick user "name" "id"}}` | Pick specific object keys |
+
+📖 **[View all Collection Transformers →](TRANSFORMERS.md#-collection-transformers-arrays)**
+
+</details>
+
+### 🔀 Logic & Comparison
+
+<details>
+<summary>Expand Logic Transformers</summary>
+
+```handlebars
+{{#if (eq status "active")}} ... {{/if}}
+{{#if (gt age 18)}} ... {{/if}}
+{{coalesce value "fallback"}}
+{{ifElse isPremium "Rich" "Poor"}}
+```
+
+📖 **[View all Logic & Comparison Transformers →](TRANSFORMERS.md#-logic--comparison-transformers)**
+
+</details>
+
+> 📚 **Complete Reference**: See [TRANSFORMERS.md](TRANSFORMERS.md) for the full list of all available transformers with detailed examples and usage.
+
+-----
+
+## ✅ Validation & Type Safety
+
+This is where Prompt Weaver shines. By integrating **Standard Schema** (Zod, Valibot, ArkType), you get runtime validation AND build-time TypeScript inference automatically.
+
+### The "Magic" of Inference
+
+You don't need to manually define interfaces. Just pass a schema.
+
+```typescript
+import { z } from 'zod';
+import { PromptWeaver } from "@iqai/prompt-weaver";
+
+// 1. Define Schema
+const schema = z.object({
+  username: z.string(),
+  age: z.number().positive(),
+  email: z.string().email().optional()
+});
+
+// 2. Pass schema to Weaver
+const weaver = new PromptWeaver(template, { schema });
+
+// 3. Type-Safe Formatting
+// TypeScript will now ERROR if you miss 'username' or if 'age' is a string!
+const output = weaver.formatWithSchema({
+  username: "Alice", 
+  age: 30,
+  // email is optional, so we can omit it safely
+});
+```
+
+### Validation Methods
+
+- `weaver.formatWithSchema(data)`: Validates, renders, and throws error if invalid.
+- `weaver.tryFormatWithSchema(data)`: Returns `null` on failure instead of throwing.
+- `weaver.validateSchema(data)`: Just runs validation, returning a success/failure object.
+
 **Example:**
-```handlebars
-{{#each items}}
-  {{#if @first}}First item: {{/if}}
-  {{increment @index}}. {{this}}
-  {{#if @last}} (Last item){{/if}}
-{{/each}}
+
+```typescript
+// Validate data before rendering (also type-safe)
+const result = weaver.validateSchema({ username: "Alice", age: 30 });
+if (result.success) {
+  console.log("Valid data:", result.data); // ✅ TypeScript infers the output type
+} else {
+  console.error("Validation errors:", result.issues);
+}
+
+// Try format (returns null on validation failure, still type-safe)
+const output = weaver.tryFormatWithSchema(userInput);
+if (output === null) {
+  console.log("Invalid input");
+} else {
+  console.log("Rendered:", output);
+}
 ```
 
-### Partials
+**Async validation:**
 
-Include reusable template fragments:
-
-```handlebars
-{{> header}}
-Main content here
-{{> footer}}
+```typescript
+const result = await weaver.validateSchemaAsync({ username: "Alice", age: 30 });
+const output = await weaver.formatWithSchemaAsync({ username: "Alice", age: 30 });
 ```
 
-See the [Partials](#-partials) section for detailed examples.
+> [!NOTE]
+> Prompt Weaver supports any Standard Schema-compatible validation library, including:
+> - **Zod** (3.24+)
+> - **Valibot** (1.0+)
+> - **ArkType** (2.0+)
+> - And other libraries that implement the [Standard Schema](https://standardschema.dev) specification
 
-## 🎯 Custom Transformers
+### Template Validation
 
-Register custom transformers using one of two approaches:
+```typescript
+import { validateTemplate } from "@iqai/prompt-weaver";
 
-### Global Registration (Simple)
+const result = validateTemplate(templateSource);
+if (!result.valid) {
+  console.error("Template errors:", result.errors);
+}
+```
 
-Register transformers globally - they'll be available to all `PromptWeaver` instances:
+-----
+
+## 🧩 Advanced Usage
+
+### Composition
+
+Merge multiple templates into one context.
+
+```typescript
+const composed = PromptWeaver.compose([headerTemplate, bodyTemplate, footerTemplate]);
+const weaver = new PromptWeaver(composed);
+```
+
+Or create directly:
+
+```typescript
+import { z } from 'zod';
+
+const schema = z.object({
+  title: z.string(),
+  content: z.string(),
+});
+
+const weaver = PromptWeaver.composeAndCreate(
+  [headerTemplate, bodyTemplate, footerTemplate],
+  { schema }
+);
+```
+
+### Custom Transformers
+
+Register your own logic globally or scoped to an instance.
+
+**Global Registration (Simple):**
 
 ```typescript
 import { registerTransformer } from "@iqai/prompt-weaver";
 
 // Simple transformer (no options)
-registerTransformer("uppercase", (value) => {
-  return String(value).toUpperCase();
-});
-// Use: {{name uppercase}}
+registerTransformer("reverse", (str) => str.split("").reverse().join(""));
+// Use: {{ text reverse }}
 
-// Transformer with one option
+// Transformer with options
 registerTransformer("truncate", (value, maxLength) => {
   const str = String(value);
   const length = Number(maxLength) || 50;
   return str.length > length ? `${str.slice(0, length - 3)}...` : str;
 });
 // Use: {{longText truncate 100}}
-
-// Transformer with multiple options
-registerTransformer("pad", (value, length, padString, direction) => {
-  const str = String(value);
-  const len = Number(length) || 10;
-  const pad = String(padString || " ");
-  const dir = String(direction || "end");
-  return dir === "start" ? str.padStart(len, pad) : str.padEnd(len, pad);
-});
-// Use: {{text pad 10 "0" "start"}}  <!-- Left pad with zeros -->
-
-// Now all instances can use these transformers
-const weaver1 = new PromptWeaver(template1);
-const weaver2 = new PromptWeaver(template2);
 ```
 
-### Scoped Registry (Isolation)
-
-Use a scoped registry when you need isolated transformers per instance (useful for testing or when different instances need different transformer sets):
+**Scoped Registry (Isolation):**
 
 ```typescript
 import { TransformerRegistry } from "@iqai/prompt-weaver";
@@ -569,290 +561,69 @@ registry.registerTransformer("customHelper", (value, option1, option2) => {
 
 // Only this instance uses this registry
 const weaver = new PromptWeaver(template, { registry });
-
-// Other instances won't see these transformers unless they use the same registry
 ```
 
 **When to use which:**
 - **Global registration** (`registerTransformer()`) - Use for shared transformers across your app
 - **Scoped registry** (`TransformerRegistry.createScoped()`) - Use for isolation, testing, or per-instance transformer sets
 
-## ✅ Validation & Type Safety
+### Core API Methods
 
-Prompt Weaver provides comprehensive validation and type safety through Standard Schema integration. When you provide a schema, TypeScript automatically infers types from it, giving you compile-time type safety without manual type definitions.
-
-### Template Validation
+**PromptWeaver Class:**
 
 ```typescript
-import { validateTemplate } from "@iqai/prompt-weaver";
+// Constructor
+new PromptWeaver(templateSource, options?)
 
-const result = validateTemplate(templateSource);
-if (!result.valid) {
-  console.error("Template errors:", result.errors);
+// Options
+interface PromptWeaverOptions {
+  registry?: TransformerRegistry; // Custom transformer registry (defaults to global)
+  partials?: Record<string, string>; // Partial templates
+  schema?: StandardSchemaV1; // Standard Schema validator (Zod, Valibot, ArkType, etc.)
 }
+
+// Methods
+weaver.format(data)                    // Render the template with data
+weaver.validateSchema(data)            // Validate data against schema (requires schema option)
+weaver.formatWithSchema(data)          // Format with automatic validation (throws on failure)
+weaver.tryFormatWithSchema(data)       // Format with validation (returns null on failure)
+weaver.extractVariables()              // Get required variables from template
+weaver.setPartial(name, templateSource) // Register a partial template
+weaver.getMetadata()                   // Get template metadata
+PromptWeaver.compose(templateSources, separator?) // Compose multiple templates (static)
 ```
 
-### Data Validation with Schema Inference
+**PromptBuilder Methods:**
 
-Validate data using Standard Schema validators (Zod, Valibot, ArkType, etc.). When you provide a schema, TypeScript automatically infers the input and output types:
+All methods return `this` for method chaining.
 
-```typescript
-import { z } from 'zod';
-import { PromptWeaver } from "@iqai/prompt-weaver";
+**Content Methods:**
+- `.section(title?, content?)` - Add a section (content can be string or function)
+- `.text(text)` - Add raw text content
+- `.code(code, language?)` - Add code block with optional language
+- `.list(items, ordered?)` - Add list (ordered or unordered)
+- `.table(headers, rows)` - Add markdown table
+- `.heading(level, text)` - Add heading (level 1-6)
+- `.quote(text)` - Add blockquote
+- `.separator(char?)` - Add separator line (default: "---")
 
-// Define your schema - TypeScript will infer types from this!
-const schema = z.object({
-  name: z.string().min(1),
-  age: z.number().positive(),
-  email: z.string().email().optional(),
-});
+**Control Flow Methods:**
+- `.conditional(condition, ifTrue, ifFalse?)` - Add conditional content based on boolean
+- `.loop(items, callback)` - Add content by iterating over items
 
-// Create PromptWeaver with schema
-// TypeScript automatically infers types from the schema
-const weaver = new PromptWeaver(template, { schema });
+**Utility Methods:**
+- `.build()` - Build final prompt string
+- `.toPromptWeaver(options?)` - Convert to PromptWeaver instance for rendering
+- `.clear()` - Clear all content and start fresh
 
-// TypeScript knows the shape of data from the schema
-// formatWithSchema() accepts the inferred input type
-const output = weaver.formatWithSchema({
-  name: "Alice",  // ✅ TypeScript knows this must be a string
-  age: 30,        // ✅ TypeScript knows this must be a positive number
-  email: "alice@example.com"  // ✅ TypeScript knows this is optional string
-});
+-----
 
-// Validate data before rendering (also type-safe)
-const result = weaver.validateSchema({ name: "Alice", age: 30 });
-if (result.success) {
-  console.log("Valid data:", result.data); // ✅ TypeScript infers the output type
-} else {
-  console.error("Validation errors:", result.issues);
-}
-```
-
-**Format with automatic validation (type-safe):**
-
-```typescript
-// This validates and renders in one step with full type inference
-// TypeScript enforces the schema shape at compile time
-// Throws SchemaValidationError if validation fails
-const output = weaver.formatWithSchema({ 
-  name: "Alice",  // TypeScript enforces: must be string, min length 1
-  age: 30         // TypeScript enforces: must be positive number
-});
-```
-
-**Try format (returns null on validation failure, still type-safe):**
-
-```typescript
-const output = weaver.tryFormatWithSchema(userInput);
-if (output === null) {
-  console.log("Invalid input");
-} else {
-  console.log("Rendered:", output);
-}
-```
-
-**Async validation:**
-
-```typescript
-const result = await weaver.validateSchemaAsync({ name: "Alice", age: 30 });
-const output = await weaver.formatWithSchemaAsync({ name: "Alice", age: 30 });
-```
-
-> [!NOTE]
-> Prompt Weaver supports any Standard Schema-compatible validation library, including:
-> - **Zod** (3.24+)
-> - **Valibot** (1.0+)
-> - **ArkType** (2.0+)
-> - And other libraries that implement the [Standard Schema](https://standardschema.dev) specification
-
-## 🧩 Template Composition
-
-Compose multiple templates:
-
-```typescript
-const header = "# Header\n";
-const body = "Body content: {{content}}";
-const footer = "---\nFooter";
-
-const composed = PromptWeaver.compose([header, body, footer]);
-const weaver = new PromptWeaver(composed);
-```
-
-Or create directly:
-
-```typescript
-import { z } from 'zod';
-
-const schema = z.object({
-  title: z.string(),
-  content: z.string(),
-});
-
-const weaver = PromptWeaver.composeAndCreate(
-  [header, body, footer],
-  { schema }
-);
-```
-
-## 🧩 Partials
-
-Partials are reusable template fragments that you can include in other templates. They're perfect for DRY (Don't Repeat Yourself) principles - define common template parts once and reuse them across multiple templates.
-
-### Why Use Partials?
-
-- **Reusability** - Define common sections (headers, footers, sections) once
-- **Maintainability** - Update a partial in one place, affects all templates using it
-- **Organization** - Break large templates into smaller, manageable pieces
-- **Consistency** - Ensure consistent formatting across templates
-
-### Basic Usage
-
-Register partials when creating a `PromptWeaver` instance:
-
-```typescript
-const mainTemplate = `
-{{> header}}
-## Main Content
-{{content}}
-{{> footer}}
-`;
-
-const weaver = new PromptWeaver(mainTemplate, {
-  partials: {
-    header: "# {{title}}\n\nWelcome, {{userName}}!\n",
-    footer: "\n---\n_Generated by PromptWeaver_",
-  },
-});
-
-const output = weaver.format({
-  title: "Dashboard",
-  userName: "Alice",
-  content: "Your dashboard content here"
-});
-```
-
-**Output:**
-```
-# Dashboard
-
-Welcome, Alice!
-
-## Main Content
-Your dashboard content here
-
----
-_Generated by PromptWeaver_
-```
-
-### Register Partials Programmatically
-
-You can also register partials after creating the instance:
-
-```typescript
-const weaver = new PromptWeaver(mainTemplate);
-weaver.setPartial("header", "<header>{{title}}</header>");
-weaver.setPartial("footer", "<footer>Footer</footer>");
-```
-
-### Partials with Context
-
-Partials inherit the parent template's context (data), but you can also pass custom context:
-
-```typescript
-const template = `
-{{> userCard user}}
-{{> userCard admin}}
-`;
-
-const weaver = new PromptWeaver(template, {
-  partials: {
-    userCard: `
-**Name**: {{name}}
-**Role**: {{role}}
-**Email**: {{email}}
----`,
-  },
-});
-
-const output = weaver.format({
-  user: { name: "Alice", role: "User", email: "alice@example.com" },
-  admin: { name: "Bob", role: "Admin", email: "bob@example.com" },
-});
-```
-
-### Real-World Example
-
-```typescript
-// Define reusable partials for a code review system
-const reviewTemplate = `
-{{> reviewHeader}}
-{{> codeSection}}
-{{> reviewCriteria}}
-{{> reviewFooter}}
-`;
-
-const weaver = new PromptWeaver(reviewTemplate, {
-  partials: {
-    reviewHeader: `
-# Code Review: {{prTitle}}
-**Author**: {{author}}
-**Repository**: {{repo}}
-**PR Number**: #{{prNumber}}
-`,
-    codeSection: `
-## Code Changes
-\`\`\`{{language}}
-{{code}}
-\`\`\`
-`,
-    reviewCriteria: `
-## Review Focus Areas
-{{#each criteria}}
-- {{this}}
-{{/each}}
-`,
-    reviewFooter: `
----
-Please review focusing on: code quality, performance, and best practices.
-`,
-  },
-});
-```
-
-## ⚠️ Error Handling
-
-Enhanced error messages with context:
-
-```typescript
-import { SchemaValidationError, TemplateCompilationError } from "@iqai/prompt-weaver";
-import { z } from 'zod';
-
-const schema = z.object({
-  name: z.string(),
-  age: z.number(),
-});
-
-try {
-  const weaver = new PromptWeaver(template, { schema });
-  const output = weaver.formatWithSchema({ name: "Alice", age: 30 });
-} catch (error) {
-  if (error instanceof SchemaValidationError) {
-    console.error("Validation failed:", error.issues);
-    console.error(error.getFormattedMessage());
-    // Detailed validation error messages from your schema library
-  } else if (error instanceof TemplateCompilationError) {
-    console.error(error.getFormattedMessage());
-    // "Template syntax error (line: 10, column: 5)"
-  }
-}
-```
-
-## 💡 Examples
+## 💡 Real-World Examples
 
 <details>
-<summary><strong>Code Review Assistant</strong></summary>
+<summary><strong>🤖 Code Review Assistant</strong></summary>
 
-### Code Review Assistant
+Generates a structured prompt for reviewing PRs, handling code blocks and arrays of criteria.
 
 ```typescript
 const codeFence = "```";
@@ -911,49 +682,12 @@ const reviewPrompt = weaver.format({
 });
 ```
 
-**Output:**
-````
-You are an expert code reviewer specializing in TypeScript.
-
-## Code to Review
-
-```TypeScript
-function calculateTotal(items: Item[]) { return items.reduce((sum, item) => sum + item.price, 0); }
-```
-
-## Review Criteria
-
-- Type safety and error handling
-- Performance and scalability
-- Code readability and maintainability
-
-## Context
-
-- Repository: my-app
-- Pull Request: #42
-- Author: John Doe
-- Files Changed: 3
-
-Please provide a thorough code review focusing on:
-1. Code quality and best practices
-2. Potential bugs or security issues
-3. Performance optimizations
-4. Test coverage recommendations
-
-## Example Review Format
-
-Please structure your review as:
-- **Critical Issues**: List any blocking issues
-- **Suggestions**: Improvement recommendations
-- **Questions**: Clarifications needed
-````
-
 </details>
 
 <details>
-<summary><strong>Data Analysis Prompt</strong></summary>
+<summary><strong>📊 Data Analysis</strong></summary>
 
-### Data Analysis Prompt
+Takes raw data numbers and dates, formats them readable, and adds warnings if outliers are detected.
 
 ```typescript
 const analysisTemplate = `
@@ -1008,165 +742,12 @@ const analysisPrompt = analysisWeaver.format({
 });
 ```
 
-**Output:**
-````
-You are a data analyst with expertise in e-commerce.
-
-## Dataset Overview
-
-- **Total Records**: 125,000
-- **Date Range**: 2024-01-01 to 2024-03-31
-- **Key Metrics**: Revenue, Conversion Rate, Customer Lifetime Value
-
-## Data Summary
-
-⚠️ **Note**: This dataset contains 47 outliers that may need special handling.
-
-## Analysis Request
-
-Analyze sales trends and identify factors contributing to revenue growth in Q1 2024.
-
-## Visualization Requirements
-
-Please suggest appropriate visualizations for:
-- Time series
-- Cohort analysis
-- Funnel visualization
-
-## Expected Output Format
-
-1. **Executive Summary**: High-level insights (2-3 sentences)
-2. **Key Findings**: 5 main observations
-3. **Recommendations**: Actionable next steps
-4. **Data Quality Notes**: Any concerns or limitations
-````
-
 </details>
 
 <details>
-<summary><strong>Content Generation Prompt</strong></summary>
+<summary><strong>📞 Customer Support</strong></summary>
 
-### Content Generation Prompt
-
-```typescript
-const contentTemplate = `
-You are a professional {{contentType}} writer with {{yearsExperience}} years of experience.
-
-## Writing Assignment
-
-**Topic**: {{topic}}
-**Target Audience**: {{audience}}
-**Tone**: {{tone}}
-**Word Count**: {{targetWordCount}} words
-
-{{#if keywords}}
-## SEO Keywords
-
-{{#each keywords}}
-- {{this}}
-{{/each}}
-{{/if}}
-
-## Content Structure
-
-{{#each sections}}
-{{increment @index}}. {{this}}
-{{/each}}
-
-## Guidelines
-
-{{#each guidelines}}
-- {{this}}
-{{/each}}
-
-{{#if includeExamples}}
-## Reference Examples
-
-{{#each examples}}
-### Example {{increment @index}}
-{{this}}
-{{/each}}
-{{/if}}
-
-Please write engaging, well-researched content that:
-- Captures the reader's attention from the first sentence
-- Provides valuable insights and actionable information
-- Maintains a consistent {{tone}} tone throughout
-- Includes relevant examples and data points where appropriate
-`;
-
-const contentWeaver = new PromptWeaver(contentTemplate);
-const contentPrompt = contentWeaver.format({
-  contentType: "technical blog post",
-  yearsExperience: 10,
-  topic: "Building Scalable APIs with TypeScript",
-  audience: "Senior software engineers",
-  tone: "professional yet approachable",
-  targetWordCount: 2000,
-  keywords: ["TypeScript", "API design", "scalability", "best practices"],
-  sections: [
-    "Introduction to API scalability challenges",
-    "TypeScript patterns for robust APIs",
-    "Performance optimization techniques",
-    "Real-world case studies",
-    "Conclusion and next steps"
-  ],
-  guidelines: [
-    "Use code examples to illustrate concepts",
-    "Include performance benchmarks where relevant",
-    "Reference industry best practices",
-    "End with actionable takeaways"
-  ],
-  includeExamples: false
-});
-```
-
-**Output:**
-````
-You are a professional technical blog post writer with 10 years of experience.
-
-## Writing Assignment
-
-**Topic**: Building Scalable APIs with TypeScript
-**Target Audience**: Senior software engineers
-**Tone**: professional yet approachable
-**Word Count**: 2000 words
-
-## SEO Keywords
-
-- TypeScript
-- API design
-- scalability
-- best practices
-
-## Content Structure
-
-1. Introduction to API scalability challenges
-2. TypeScript patterns for robust APIs
-3. Performance optimization techniques
-4. Real-world case studies
-5. Conclusion and next steps
-
-## Guidelines
-
-- Use code examples to illustrate concepts
-- Include performance benchmarks where relevant
-- Reference industry best practices
-- End with actionable takeaways
-
-Please write engaging, well-researched content that:
-- Captures the reader's attention from the first sentence
-- Provides valuable insights and actionable information
-- Maintains a consistent professional yet approachable tone throughout
-- Includes relevant examples and data points where appropriate
-````
-
-</details>
-
-<details>
-<summary><strong>Customer Support Prompt</strong></summary>
-
-### Customer Support Prompt
+Formats a customer ticket with history, deciding tone based on "Premium" status variables.
 
 ```typescript
 const supportTemplate = `
@@ -1240,53 +821,10 @@ const supportPrompt = supportWeaver.format({
 });
 ```
 
-**Output:**
-````
-You are a customer support specialist for TechCorp.
-
-## Customer Information
-
-- **Name**: Sarah Johnson
-- **Account Type**: Business
-- **Member Since**: June 2023
-- ⭐ **Premium Member**
-
-## Issue Details
-
-**Ticket ID**: TC-2024-0847
-**Category**: Billing
-**Priority**: HIGH
-**Reported**: 2 hours ago
-
-**Description**:
-I was charged twice for my subscription renewal. The charge appeared on both my credit card and PayPal account.
-
-## Previous Interactions
-
-This customer has 1 previous ticket:
-- Ticket #TC-2024-0721: Feature request (resolved)
-
-## Recent Order History
-
-- Order #ORD-1234: Pro Plan - Mar 01, 2024 - Completed
-
-## Response Guidelines
-
-1. Acknowledge the customer's concern with empathy
-2. Provide a clear, step-by-step solution
-3. Offer priority escalation if needed
-4. Set clear expectations for resolution timeline
-5. End with a warm, helpful closing
-
-Please draft a professional, helpful response that resolves their issue.
-````
-
 </details>
 
 <details>
-<summary><strong>Programmatic Prompt Building</strong></summary>
-
-### Programmatic Prompt Building
+<summary><strong>🏗️ Programmatic Prompt Building</strong></summary>
 
 Build prompts dynamically based on runtime conditions:
 
@@ -1335,77 +873,42 @@ const output = weaver.format({
 
 </details>
 
-## 🔷 TypeScript Support
+-----
 
-Prompt Weaver provides full TypeScript support with two approaches: manual type definitions or automatic type inference from schemas.
+## ⚠️ Error Handling
 
-### Manual Type Definitions
+Prompt Weaver provides specific error classes for debugging.
 
-Define your data types explicitly using TypeScript interfaces:
+- `SchemaValidationError`: Thrown when data doesn't match your Zod/Valibot schema.
+- `TemplateCompilationError`: Thrown when your Handlebars syntax is broken (e.g., unclosed tags).
 
-```typescript
-interface PromptData {
-  name: string;
-  age: number;
-  email: string;
-}
-
-const weaver = new PromptWeaver<PromptData>(template);
-// TypeScript will enforce the data shape
-const output = weaver.format({
-  name: "Alice",
-  age: 30,
-  email: "alice@example.com",
-});
-```
-
-### Schema-Based Type Inference (Recommended)
-
-When you provide a Standard Schema validator, TypeScript automatically infers types from it. This gives you:
-- ✅ **Single source of truth** - Your schema defines both validation rules and types
-- ✅ **Automatic type inference** - No need to manually define interfaces
-- ✅ **Compile-time safety** - TypeScript enforces schema constraints
-- ✅ **Runtime validation** - Data is validated against the schema
+**Example:**
 
 ```typescript
+import { SchemaValidationError, TemplateCompilationError } from "@iqai/prompt-weaver";
 import { z } from 'zod';
-import { PromptWeaver } from "@iqai/prompt-weaver";
 
-// Define schema - TypeScript infers types automatically
 const schema = z.object({
-  name: z.string().min(1),
-  age: z.number().positive(),
-  email: z.string().email().optional(),
+  name: z.string(),
+  age: z.number(),
 });
 
-// TypeScript automatically infers the input/output types from the schema
-const weaver = new PromptWeaver(template, { schema });
-
-// TypeScript knows the exact shape from the schema
-const output = weaver.formatWithSchema({
-  name: "Alice",  // ✅ TypeScript enforces: string, min length 1
-  age: 30,        // ✅ TypeScript enforces: positive number
-  email: "alice@example.com"  // ✅ TypeScript knows: optional email string
-});
-
-// Type inference works with validation too
-const result = weaver.validateSchema({ name: "Alice", age: 30 });
-if (result.success) {
-  // result.data is automatically typed based on schema output
-  console.log(result.data.name);  // ✅ TypeScript knows this is a string
-  console.log(result.data.age);   // ✅ TypeScript knows this is a number
+try {
+  const weaver = new PromptWeaver(template, { schema });
+  const output = weaver.formatWithSchema({ name: "Alice", age: 30 });
+} catch (error) {
+  if (error instanceof SchemaValidationError) {
+    console.error("Validation failed:", error.issues);
+    console.error(error.getFormattedMessage());
+    // Detailed validation error messages from your schema library
+  } else if (error instanceof TemplateCompilationError) {
+    console.error(error.getFormattedMessage());
+    // "Template syntax error (line: 10, column: 5)"
+  }
 }
 ```
 
-**Benefits of Schema-Based Inference:**
-- Types stay in sync with validation rules automatically
-- No need to maintain separate TypeScript interfaces
-- Works with any Standard Schema-compatible library (Zod, Valibot, ArkType, etc.)
-- Full type safety for `formatWithSchema()`, `validateSchema()`, and related methods
-
-> 💡 **Best Practice**: Use schema-based type inference for new projects. It reduces boilerplate and ensures types always match your validation rules.
-
----
+-----
 
 <div align="center">
 
