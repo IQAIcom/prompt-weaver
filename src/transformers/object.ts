@@ -6,28 +6,33 @@ import Handlebars from "handlebars";
 export function registerObjectHelpers(): void {
   // Object access
   Handlebars.registerHelper("get", (obj: Record<string, unknown>, key: string) => {
-    if (!obj || typeof obj !== "object") return undefined;
+    // Exclude arrays and null
+    if (!obj || typeof obj !== "object" || Array.isArray(obj)) return undefined;
     return obj[key];
   });
 
   Handlebars.registerHelper("has", (obj: Record<string, unknown>, key: string) => {
-    if (!obj || typeof obj !== "object") return false;
+    // Exclude arrays and null
+    if (!obj || typeof obj !== "object" || Array.isArray(obj)) return false;
     return key in obj;
   });
 
   Handlebars.registerHelper("keys", (obj: Record<string, unknown>) => {
-    if (!obj || typeof obj !== "object") return [];
+    // Exclude arrays and null
+    if (!obj || typeof obj !== "object" || Array.isArray(obj)) return [];
     return Object.keys(obj);
   });
 
   Handlebars.registerHelper("values", (obj: Record<string, unknown>) => {
-    if (!obj || typeof obj !== "object") return [];
+    // Exclude arrays and null
+    if (!obj || typeof obj !== "object" || Array.isArray(obj)) return [];
     return Object.values(obj);
   });
 
   // Object filtering
   Handlebars.registerHelper("pick", (obj: Record<string, unknown>, ...args: unknown[]) => {
-    if (!obj || typeof obj !== "object") return {};
+    // Exclude arrays and null
+    if (!obj || typeof obj !== "object" || Array.isArray(obj)) return {};
     const result: Record<string, unknown> = {};
     // Last arg is options object, exclude it
     const keys = args.slice(0, -1) as string[];
@@ -40,7 +45,8 @@ export function registerObjectHelpers(): void {
   });
 
   Handlebars.registerHelper("omit", (obj: Record<string, unknown>, ...args: unknown[]) => {
-    if (!obj || typeof obj !== "object") return {};
+    // Exclude arrays and null
+    if (!obj || typeof obj !== "object" || Array.isArray(obj)) return {};
     const result: Record<string, unknown> = { ...obj };
     // Last arg is options object, exclude it
     const keys = args.slice(0, -1) as string[];
@@ -66,10 +72,12 @@ export function registerObjectHelpers(): void {
 
   // Nested property access with dot notation
   Handlebars.registerHelper("deepGet", (obj: unknown, path: string) => {
-    if (!obj || typeof obj !== "object") return undefined;
+    // Exclude arrays and null at top level
+    if (!obj || typeof obj !== "object" || Array.isArray(obj)) return undefined;
     const keys = String(path).split(".");
     let current: unknown = obj;
     for (const key of keys) {
+      // Allow arrays in nested paths (e.g., "items.0.name")
       if (current && typeof current === "object" && key in current) {
         current = (current as Record<string, unknown>)[key];
       } else {
