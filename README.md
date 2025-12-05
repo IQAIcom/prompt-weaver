@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="./logo.png" alt="Prompt Weaver Logo" width="100">
+
 # Prompt Weaver - Craft Powerful Prompts with Ease
 
 A powerful, extensible template engine for building prompts. Prompt Weaver provides a comprehensive set of transformers, validation utilities, and a fluent API for programmatic prompt construction.
