@@ -1,6 +1,6 @@
 import type { StandardSchemaV1 } from "@standard-schema/spec";
 import Handlebars, { type TemplateDelegate } from "handlebars";
-import type { TransformerRegistry } from "./plugin-system.js";
+import { getGlobalRegistry, registerHandlebarsHelpers } from "../transformers/index.js";
 import {
   isStandardSchema,
   parseWithSchema,
@@ -9,8 +9,8 @@ import {
   validateWithSchema,
   validateWithSchemaAsync,
 } from "../validation/schema-validation.js";
-import { getGlobalRegistry, registerHandlebarsHelpers } from "../transformers/index.js";
 import { extractVariables, validateTemplate } from "../validation/template-validation.js";
+import type { TransformerRegistry } from "./plugin-system.js";
 
 /**
  * Options for configuring PromptWeaver instance
@@ -378,4 +378,3 @@ export class PromptWeaver<
     return validateWithSchemaAsync(schema, data);
   }
 }
-
