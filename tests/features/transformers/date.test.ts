@@ -112,6 +112,56 @@ describe("Date Transformers Feature", () => {
       const weaver = new PromptWeaver(template);
       expect(weaver.format({ date: "invalid" })).toBe("");
     });
+
+    it("should format date with month name patterns", () => {
+      const template = "{{formatDate date 'MMMM DD, YYYY'}}";
+      const weaver = new PromptWeaver(template);
+      const date = new Date("2024-01-15T10:30:00Z");
+      const result = weaver.format({ date });
+      expect(result).toBe("January 15, 2024");
+    });
+
+    it("should format date with abbreviated month name", () => {
+      const template = "{{formatDate date 'MMM DD, YYYY'}}";
+      const weaver = new PromptWeaver(template);
+      const date = new Date("2024-01-15T10:30:00Z");
+      const result = weaver.format({ date });
+      expect(result).toBe("Jan 15, 2024");
+    });
+
+    it("should format date with day name patterns", () => {
+      const template = "{{formatDate date 'DDDD, MMMM DD, YYYY'}}";
+      const weaver = new PromptWeaver(template);
+      const date = new Date("2024-01-15T10:30:00Z"); // This is a Monday
+      const result = weaver.format({ date });
+      expect(result).toContain("Monday");
+      expect(result).toContain("January");
+      expect(result).toContain("2024");
+    });
+
+    it("should format date with abbreviated day name", () => {
+      const template = "{{formatDate date 'DDD, MMM DD'}}";
+      const weaver = new PromptWeaver(template);
+      const date = new Date("2024-01-15T10:30:00Z"); // This is a Monday
+      const result = weaver.format({ date });
+      expect(result).toContain("Mon");
+    });
+
+    it("should format date with single digit month and day", () => {
+      const template = "{{formatDate date 'M/D/YY'}}";
+      const weaver = new PromptWeaver(template);
+      const date = new Date("2024-01-05T10:30:00Z");
+      const result = weaver.format({ date });
+      expect(result).toBe("1/5/24");
+    });
+
+    it("should format date with two-digit year", () => {
+      const template = "{{formatDate date 'MM/DD/YY'}}";
+      const weaver = new PromptWeaver(template);
+      const date = new Date("2024-01-15T10:30:00Z");
+      const result = weaver.format({ date });
+      expect(result).toBe("01/15/24");
+    });
   });
 
   describe("Relative Time", () => {
@@ -348,6 +398,14 @@ describe("Date Transformers Feature", () => {
       const template = "{{unixTimestamp date}}";
       const weaver = new PromptWeaver(template);
       expect(weaver.format({ date: "invalid" })).toBe("0");
+    });
+  });
+
+  describe("Edge Cases", () => {
+    it("should handle invalid dates in date transformers", () => {
+      const template = "{{formatDate date 'YYYY-MM-DD'}}";
+      const weaver = new PromptWeaver(template);
+      expect(weaver.format({ date: "invalid-date" })).toBe("");
     });
   });
 });

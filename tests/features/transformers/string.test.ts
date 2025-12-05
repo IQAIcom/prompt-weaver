@@ -193,4 +193,12 @@ describe("String Transformers Feature", () => {
       expect(weaver.format({ text: "short" })).toBe("short");
     });
   });
+
+  describe("Edge Cases", () => {
+    it("should handle empty strings in string transformers", () => {
+      const template = "{{upper text}}";
+      const weaver = new PromptWeaver(template);
+      expect(weaver.format({ text: "" })).toBe("");
+    });
+  });
 });

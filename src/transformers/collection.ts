@@ -7,16 +7,43 @@ export function registerCollectionHelpers(): void {
   // Array operations
   Handlebars.registerHelper(
     "filter",
-    (array: unknown[], predicate: string, _options: Handlebars.HelperOptions) => {
+    (
+      array: unknown[],
+      predicate: string | unknown,
+      valueOrOptions?: unknown,
+      _options?: Handlebars.HelperOptions
+    ) => {
       if (!Array.isArray(array)) return [];
-      // For simple property checks, we'll use a basic filter
-      // More complex predicates would require a more sophisticated implementation
-      return array.filter((item) => {
-        if (typeof item === "object" && item !== null && predicate in item) {
-          return Boolean((item as Record<string, unknown>)[predicate]);
-        }
-        return Boolean(item);
-      });
+
+      // Check if valueOrOptions is the Handlebars options object
+      const isOptionsObject =
+        valueOrOptions &&
+        typeof valueOrOptions === "object" &&
+        "hash" in valueOrOptions &&
+        "data" in valueOrOptions;
+
+      // If value is provided (and it's not the options object), filter by property equals value
+      if (!isOptionsObject && valueOrOptions !== undefined && typeof predicate === "string") {
+        return array.filter((item) => {
+          if (typeof item === "object" && item !== null && predicate in item) {
+            return (item as Record<string, unknown>)[predicate] === valueOrOptions;
+          }
+          return false;
+        });
+      }
+
+      // If predicate is a string, treat it as a property name
+      if (typeof predicate === "string") {
+        return array.filter((item) => {
+          if (typeof item === "object" && item !== null && predicate in item) {
+            return Boolean((item as Record<string, unknown>)[predicate]);
+          }
+          return Boolean(item);
+        });
+      }
+
+      // Otherwise, filter by truthiness
+      return array.filter((item) => Boolean(item));
     }
   );
 
@@ -32,11 +59,68 @@ export function registerCollectionHelpers(): void {
 
   Handlebars.registerHelper(
     "reduce",
-    (array: unknown[], initialValue: unknown, _options: Handlebars.HelperOptions) => {
+    (
+      array: unknown[],
+      initialValue: unknown,
+      operationOrOptions?: string | Handlebars.HelperOptions,
+      _options?: Handlebars.HelperOptions
+    ) => {
+      // Check if operationOrOptions is the Handlebars options object
+      const isOptionsObject =
+        operationOrOptions &&
+        typeof operationOrOptions === "object" &&
+        "hash" in operationOrOptions &&
+        "data" in operationOrOptions;
+
+      const operation = isOptionsObject ? undefined : (operationOrOptions as string | undefined);
       if (!Array.isArray(array)) return initialValue;
-      // Basic reduce - for more complex operations, users can use block helpers
+
+      // If operation is specified, use it
+      if (typeof operation === "string") {
+        switch (operation.toLowerCase()) {
+          case "sum":
+          case "add":
+            return array.reduce((acc, item) => {
+              const accNum = Number(acc) || 0;
+              const itemNum = Number(item) || 0;
+              return accNum + itemNum;
+            }, Number(initialValue) || 0);
+          case "multiply":
+          case "product":
+            return array.reduce((acc, item) => {
+              const accNum = Number(acc) || 1;
+              const itemNum = Number(item) || 1;
+              return accNum * itemNum;
+            }, Number(initialValue) || 1);
+          case "max":
+            return array.reduce((acc, item) => {
+              const accNum = Number(acc);
+              const itemNum = Number(item);
+              if (Number.isNaN(accNum)) return itemNum;
+              if (Number.isNaN(itemNum)) return accNum;
+              return Math.max(accNum, itemNum);
+            }, initialValue);
+          case "min":
+            return array.reduce((acc, item) => {
+              const accNum = Number(acc);
+              const itemNum = Number(item);
+              if (Number.isNaN(accNum)) return itemNum;
+              if (Number.isNaN(itemNum)) return accNum;
+              return Math.min(accNum, itemNum);
+            }, initialValue);
+          case "concat":
+          case "join":
+            return array.reduce((acc, item) => {
+              return String(acc) + String(item);
+            }, initialValue || "");
+          default:
+            // Unknown operation, fall through to default behavior
+            break;
+        }
+      }
+
+      // Default: Simple sum for numbers, otherwise return accumulator
       return array.reduce((acc, item) => {
-        // Simple sum for numbers
         if (typeof acc === "number" && typeof item === "number") {
           return acc + item;
         }

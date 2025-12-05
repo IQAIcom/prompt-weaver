@@ -93,4 +93,17 @@ describe("Partials Feature", () => {
       expect(metadata.partials).toContain("footer");
     });
   });
+
+  describe("Large Templates", () => {
+    it("should handle deeply nested partials", () => {
+      const weaver = new PromptWeaver("{{> level1}}", {
+        partials: {
+          level1: "{{> level2}}",
+          level2: "{{> level3}}",
+          level3: "Hello {{name}}",
+        },
+      });
+      expect(weaver.format({ name: "World" })).toBe("Hello World");
+    });
+  });
 });

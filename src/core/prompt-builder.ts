@@ -129,6 +129,14 @@ export class PromptBuilder {
   }
 
   /**
+   * Add a horizontal rule (alias for separator)
+   * @param char - Character to use for separator (default: "---")
+   */
+  horizontalRule(char = "---"): this {
+    return this.separator(char);
+  }
+
+  /**
    * Add a heading
    * @param level - Heading level (1-6)
    * @param text - Heading text
@@ -147,6 +155,76 @@ export class PromptBuilder {
     const lines = text.split("\n");
     const quotedLines = lines.map((line) => `> ${line}`);
     this.currentSection.push(quotedLines.join("\n"));
+    return this;
+  }
+
+  /**
+   * Add formatted JSON content
+   * @param data - Data to format as JSON
+   * @param indent - Number of spaces for indentation (default: 2)
+   */
+  json(data: unknown, indent = 2): this {
+    try {
+      const jsonStr = JSON.stringify(data, null, indent);
+      this.currentSection.push(`\`\`\`json\n${jsonStr}\n\`\`\``);
+    } catch {
+      // If JSON.stringify fails, add as plain text
+      this.currentSection.push(String(data));
+    }
+    return this;
+  }
+
+  /**
+   * Add a markdown link
+   * @param text - Link text
+   * @param url - Link URL
+   */
+  link(text: string, url: string): this {
+    this.currentSection.push(`[${text}](${url})`);
+    return this;
+  }
+
+  /**
+   * Add a markdown image
+   * @param alt - Alt text for the image
+   * @param url - Image URL
+   * @param title - Optional title for the image
+   */
+  image(alt: string, url: string, title?: string): this {
+    const titlePart = title ? ` "${title}"` : "";
+    this.currentSection.push(`![${alt}](${url}${titlePart})`);
+    return this;
+  }
+
+  /**
+   * Add a checkbox/task list item
+   * @param text - Checkbox text
+   * @param checked - Whether the checkbox is checked (default: false)
+   */
+  checkbox(text: string, checked = false): this {
+    const mark = checked ? "[x]" : "[ ]";
+    this.currentSection.push(`${mark} ${text}`);
+    return this;
+  }
+
+  /**
+   * Add multiple checkboxes/task list items
+   * @param items - Array of checkbox items (can be strings or objects with text and checked properties)
+   */
+  checkboxes(
+    items: Array<string | { text: string; checked?: boolean }>
+  ): this {
+    if (items.length === 0) return this;
+
+    const checkboxItems = items.map((item) => {
+      if (typeof item === "string") {
+        return `[ ] ${item}`;
+      }
+      const mark = item.checked ? "[x]" : "[ ]";
+      return `${mark} ${item.text}`;
+    });
+
+    this.currentSection.push(checkboxItems.join("\n"));
     return this;
   }
 

@@ -83,28 +83,35 @@ When using Prompt Weaver, please follow these security best practices:
 
 - Always validate data before rendering templates
 - Use TypeScript types for type safety
-- Enable `strict` mode for extra validation
-- Use `throwOnMissing` option in production
+- Use Standard Schema validation (Zod, Valibot, ArkType) for runtime validation
+- The `format()` method automatically validates when a schema is provided
 
 ### Example Safe Usage
 
 ```typescript
-import { PromptWeaver } from "@iqai/prompt-weaver";
+import { PromptWeaver, SchemaValidationError } from "@iqai/prompt-weaver";
+import { z } from "zod";
 
 // ✅ Good: Validate and sanitize user input
 const userInput = sanitizeUserInput(rawUserInput);
-const weaver = new PromptWeaver(template, {
-  strict: true,
-  throwOnMissing: true,
+
+// ✅ Good: Define schema for validation
+const schema = z.object({
+  name: z.string().min(1),
+  age: z.number().positive(),
 });
 
-// ✅ Good: Validate data before rendering
-const validation = weaver.validate(userInput);
-if (!validation.valid) {
-  throw new Error("Invalid data");
-}
+// ✅ Good: Create weaver with schema - format() automatically validates
+const weaver = new PromptWeaver(template, { schema });
 
-const output = weaver.format(userInput);
+// ✅ Good: format() automatically validates and throws SchemaValidationError if invalid
+try {
+  const output = weaver.format(userInput);
+} catch (error) {
+  if (error instanceof SchemaValidationError) {
+    console.error("Validation failed:", error.issues);
+  }
+}
 ```
 
 ### Example Unsafe Usage

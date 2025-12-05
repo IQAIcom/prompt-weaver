@@ -21,4 +21,17 @@ describe("Initialization Feature", () => {
     // Most "invalid" templates are actually accepted, so we skip this test
     // The validation function wraps Handlebars.compile which handles validation
   });
+
+  describe("Template Composition", () => {
+    it("should handle composing empty templates", () => {
+      const composed = PromptWeaver.compose(["", "", ""]);
+      // Empty strings still join with separators
+      expect(composed.split("\n").length).toBeGreaterThanOrEqual(2);
+    });
+
+    it("should handle composing with custom separator", () => {
+      const composed = PromptWeaver.compose(["A", "B", "C"], " | ");
+      expect(composed).toBe("A | B | C");
+    });
+  });
 });

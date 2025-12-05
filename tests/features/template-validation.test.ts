@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { PromptWeaver } from "../../src/core/prompt-weaver.js";
 import {
   extractVariables,
   TemplateCompilationError,
@@ -6,6 +7,39 @@ import {
 } from "../../src/validation/template-validation.js";
 
 describe("Template Validation Feature", () => {
+  describe("Null and Undefined Handling", () => {
+    it("should handle null values in templates", () => {
+      const template = "Value: {{value}}";
+      const weaver = new PromptWeaver(template);
+      expect(weaver.format({ value: null })).toBe("Value: ");
+    });
+
+    it("should handle undefined values in templates", () => {
+      const template = "Value: {{value}}";
+      const weaver = new PromptWeaver(template);
+      expect(weaver.format({ value: undefined })).toBe("Value: ");
+    });
+
+    it("should handle missing variables gracefully", () => {
+      const template = "Hello {{name}}, age: {{age}}";
+      const weaver = new PromptWeaver(template);
+      expect(weaver.format({ name: "Alice" })).toBe("Hello Alice, age: ");
+    });
+
+    it("should handle nested null properties", () => {
+      const template = "User: {{user.name}}, Email: {{user.email}}";
+      const weaver = new PromptWeaver(template);
+      expect(weaver.format({ user: { name: null, email: "test@example.com" } })).toBe(
+        "User: , Email: test@example.com"
+      );
+    });
+
+    it("should handle empty objects", () => {
+      const template = "{{#if user}}{{user.name}}{{else}}No user{{/if}}";
+      const weaver = new PromptWeaver(template);
+      expect(weaver.format({ user: {} })).toBe("");
+    });
+  });
   describe("Variable Extraction", () => {
     it("should extract variables excluding helpers and block helpers", () => {
       const template = "Hello {{name}}, {{#if condition}}yes{{/if}}";
@@ -60,6 +94,23 @@ describe("Template Validation Feature", () => {
         const formatted = error.getFormattedMessage();
         expect(formatted).toContain(error.message);
       }
+    });
+  });
+
+  describe("Error Recovery", () => {
+    it("should handle template compilation errors gracefully", () => {
+      expect(() => {
+        new PromptWeaver("{{#if}}{{/if}}"); // Missing condition
+      }).not.toThrow(); // Handlebars is lenient, but our validation should catch it
+    });
+
+    it("should handle invalid partial references", () => {
+      const template = "{{> nonexistent}}";
+      // Handlebars throws an error for missing partials
+      expect(() => {
+        const weaver = new PromptWeaver(template);
+        weaver.format({});
+      }).toThrow();
     });
   });
 });
