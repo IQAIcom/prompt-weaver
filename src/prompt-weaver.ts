@@ -2,6 +2,7 @@ import type { StandardSchemaV1 } from "@standard-schema/spec";
 import Handlebars, { type TemplateDelegate } from "handlebars";
 import type { TemplateHelper, TransformerRegistry } from "./core/plugin-system.js";
 import {
+  SchemaValidationError,
   type SchemaValidationResult,
   isStandardSchema,
   parseWithSchema,
@@ -410,8 +411,12 @@ export class PromptWeaver<
   tryFormatWithSchema(data: unknown): string | null {
     try {
       return this.formatWithSchema(data);
-    } catch {
-      return null;
+    } catch (error) {
+      // Only swallow validation errors. Re-throw configuration or other errors.
+      if (error instanceof SchemaValidationError) {
+        return null;
+      }
+      throw error;
     }
   }
 
