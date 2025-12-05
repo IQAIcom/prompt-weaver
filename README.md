@@ -79,7 +79,7 @@ console.log(output);
 ```
 
 **Output:**
-```
+```ellipsis
 You are an AI assistant helping Alice with their project planning.
 
 ## Account Summary
@@ -664,6 +664,9 @@ try {
 
 ## 💡 Examples
 
+<details>
+<summary><strong>Code Review Assistant</strong></summary>
+
 ### Code Review Assistant
 
 ```typescript
@@ -759,6 +762,11 @@ Please structure your review as:
 - **Questions**: Clarifications needed
 ```
 
+</details>
+
+<details>
+<summary><strong>Data Analysis Prompt</strong></summary>
+
 ### Data Analysis Prompt
 
 ```typescript
@@ -813,6 +821,11 @@ const analysisPrompt = analysisWeaver.format({
   findingsCount: 5
 });
 ```
+
+</details>
+
+<details>
+<summary><strong>Content Generation Prompt</strong></summary>
 
 ### Content Generation Prompt
 
@@ -889,6 +902,11 @@ const contentPrompt = contentWeaver.format({
 });
 ```
 
+</details>
+
+<details>
+<summary><strong>Customer Support Prompt</strong></summary>
+
 ### Customer Support Prompt
 
 ```typescript
@@ -963,6 +981,11 @@ const supportPrompt = supportWeaver.format({
 });
 ```
 
+</details>
+
+<details>
+<summary><strong>Programmatic Prompt Building</strong></summary>
+
 ### Programmatic Prompt Building
 
 Build prompts dynamically based on runtime conditions:
@@ -1010,6 +1033,8 @@ const output = weaver.format({
 - Convert to PromptWeaver for template rendering with variables
 - Validate data against the built template
 
+</details>
+
 ## 🔷 TypeScript Support
 
 Full TypeScript support with generics:
@@ -1033,3 +1058,11 @@ const output = weaver.format({
 ## 📄 License
 
 MIT
+
+---
+
+<div align="center">
+
+Built with 💙 by IQ AI Team
+
+</div>
