@@ -215,9 +215,6 @@ type NonArrayVars<T extends string> = Exclude<
 // Main Type Inference
 // ============================================================================
 
-/** Check if template uses partials ({{> partialName}}) */
-type HasPartials<T extends string> = T extends `${string}{{>${string}` ? true : false;
-
 /**
  * Check if template uses subexpressions (helpers that transform data)
  * These are unreliable for inference since we can't understand transformer behavior

@@ -48,7 +48,7 @@ export class TemplateCompilationError extends Error {
         }
 
         if (contextLines.length > 0) {
-          msg += "\n\nContext:\n" + contextLines.join("\n");
+          msg += `\n\nContext:\n${contextLines.join("\n")}`;
         }
       }
     }
@@ -56,7 +56,7 @@ export class TemplateCompilationError extends Error {
     // Add suggestions for common errors
     const suggestions = this.getSuggestions();
     if (suggestions.length > 0) {
-      msg += "\n\nSuggestions:\n" + suggestions.map((s) => `  - ${s}`).join("\n");
+      msg += `\n\nSuggestions:\n${suggestions.map((s) => `  - ${s}`).join("\n")}`;
     }
 
     return msg;

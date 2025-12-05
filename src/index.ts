@@ -22,6 +22,15 @@ export {
   registerTransformer,
   TransformerRegistry,
 } from "./transformers/index.js";
+// Template type inference (compile-time)
+export {
+  createTypedTemplate,
+  type InferTemplateData,
+  type TemplateArrays,
+  type TemplateConditions,
+  type TemplateDataType,
+  type TemplateVariables,
+} from "./types/template-inference.js";
 // Standard Schema validation exports
 export {
   SchemaValidationError,
@@ -33,12 +42,3 @@ export {
   TemplateCompilationError,
   validateTemplate,
 } from "./validation/template-validation.js";
-// Template type inference (compile-time)
-export {
-  createTypedTemplate,
-  type InferTemplateData,
-  type TemplateArrays,
-  type TemplateConditions,
-  type TemplateDataType,
-  type TemplateVariables,
-} from "./types/template-inference.js";
