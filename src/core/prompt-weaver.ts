@@ -88,7 +88,6 @@ export interface PromptWeaverOptions<TSchema extends StandardSchemaV1 = Standard
   enableCache?: boolean;
 }
 
-
 /**
  * Template metadata extracted from the template
  */
@@ -117,8 +116,7 @@ export interface TemplateMetadata {
 type InferData<
   TTemplate extends string,
   TSchema extends StandardSchemaV1,
-> = // Check if schema provides useful type info (has at least one key)
-keyof StandardSchemaV1.InferInput<TSchema> extends never
+> = keyof StandardSchemaV1.InferInput<TSchema> extends never // Check if schema provides useful type info (has at least one key)
   ? // No schema type info - try template inference (best-effort)
     string extends TTemplate
     ? Record<string, unknown> // Template is generic string, no inference possible

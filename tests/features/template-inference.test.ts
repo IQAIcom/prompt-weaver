@@ -2,9 +2,9 @@ import { describe, expect, it } from "vitest";
 import { z } from "zod";
 import {
   createTypedTemplate,
+  type InferTemplateData,
   PromptWeaver,
   registerTransformer,
-  type InferTemplateData,
   type TemplateArrays,
   type TemplateVariables,
 } from "../../src/index.js";
@@ -91,7 +91,8 @@ describe("Template Type Inference", () => {
 
   describe("TemplateArrays", () => {
     it("should extract array names from {{#each}} blocks", () => {
-      const template = `{{#each products}}{{name}}{{/each}} {{#each tags}}{{label}}{{/each}}` as const;
+      const template =
+        `{{#each products}}{{name}}{{/each}} {{#each tags}}{{label}}{{/each}}` as const;
       type Arrays = TemplateArrays<typeof template>;
 
       const arr1: Arrays = "products";
@@ -137,9 +138,7 @@ describe("Template Type Inference", () => {
         companyName: "Acme Corp",
         userName: "John",
         userQuery: "Help me find a product",
-        products: [
-          { name: "Widget", description: "A great widget" },
-        ],
+        products: [{ name: "Widget", description: "A great widget" }],
       };
 
       expect(data.companyName).toBe("Acme Corp");
@@ -366,4 +365,3 @@ describe("Template Type Inference", () => {
     });
   });
 });
-
