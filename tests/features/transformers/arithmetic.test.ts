@@ -1,9 +1,9 @@
 import Handlebars from "handlebars";
 import { beforeEach, describe, expect, it } from "vitest";
-import { PromptWeaver } from "../../src/prompt-weaver.js";
-import { registerArithmeticHelpers } from "../../src/transformers/arithmetic.js";
+import { PromptWeaver } from "../../../src/prompt-weaver.js";
+import { registerArithmeticHelpers } from "../../../src/transformers/arithmetic.js";
 
-describe("Arithmetic Transformers", () => {
+describe("Arithmetic Transformers Feature", () => {
   beforeEach(() => {
     Handlebars.unregisterHelper("divide");
     registerArithmeticHelpers();
@@ -16,3 +16,4 @@ describe("Arithmetic Transformers", () => {
     expect(weaver.format({ a: 5, b: 2 })).toBe("2.5");
   });
 });
+

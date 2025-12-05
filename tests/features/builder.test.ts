@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { PromptBuilder } from "../src/builder.js";
-import { PromptWeaver } from "../src/prompt-weaver.js";
+import { PromptBuilder } from "../../src/builder.js";
+import { PromptWeaver } from "../../src/prompt-weaver.js";
 
-describe("PromptBuilder", () => {
+describe("Builder Feature", () => {
   describe("Section Management", () => {
     it("should build multiple sections correctly", () => {
       const builder = new PromptBuilder();
@@ -62,3 +62,4 @@ describe("PromptBuilder", () => {
     });
   });
 });
+

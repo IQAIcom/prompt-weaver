@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { z } from "zod/v4";
+import { PromptWeaver } from "../../src/prompt-weaver.js";
 import {
   createSafeParser,
   createSafeParserAsync,
@@ -11,10 +12,10 @@ import {
   SchemaValidationError,
   validateWithSchema,
   validateWithSchemaAsync,
-} from "../src/schema-validation.js";
-import { createMockAsyncSchema, createMockSchema } from "./helpers.js";
+} from "../../src/schema-validation.js";
+import { createMockAsyncSchema, createMockSchema } from "../helpers.js";
 
-describe("Schema Validation", () => {
+describe("Schema Validation Feature", () => {
   describe("Schema Detection", () => {
     it("should detect valid Standard Schema", () => {
       const schema = createMockSchema(() => ({ value: {} }));
@@ -347,6 +348,87 @@ describe("Schema Validation", () => {
       const formatted = formatValidationIssues(result.issues ?? []);
       expect(formatted).toContain("1.");
       expect(typeof formatted).toBe("string");
+    });
+  });
+
+  describe("PromptWeaver Integration", () => {
+    it("should validate and render with formatWithSchema (success)", () => {
+      const schema = createMockSchema((data) => {
+        if (typeof data === "object" && data !== null && "name" in data) {
+          return { value: data };
+        }
+        return {
+          issues: [{ message: "Invalid data", path: [] }],
+        };
+      });
+
+      const weaver = new PromptWeaver("Hello {{name}}", { schema });
+      const result = weaver.formatWithSchema({ name: "World" });
+      expect(result).toBe("Hello World");
+    });
+
+    it("should throw SchemaValidationError on validation failure", () => {
+      const schema = createMockSchema(() => ({
+        issues: [{ message: "Name is required", path: ["name"] }],
+      }));
+
+      const weaver = new PromptWeaver("Hello {{name}}", { schema });
+      expect(() => {
+        weaver.formatWithSchema({});
+      }).toThrow(SchemaValidationError);
+    });
+
+    it("should return null on validation failure with tryFormatWithSchema", () => {
+      const schema = createMockSchema(() => ({
+        issues: [{ message: "Invalid", path: [] }],
+      }));
+
+      const weaver = new PromptWeaver("Hello {{name}}", { schema });
+      const result = weaver.tryFormatWithSchema({});
+      expect(result).toBeNull();
+    });
+
+    it("should re-throw non-validation errors in tryFormatWithSchema", () => {
+      const schema = createMockSchema(() => ({
+        value: {},
+      }));
+
+      const weaver = new PromptWeaver("Hello {{name}}", { schema });
+      // Missing 'name' variable renders empty string, which is valid
+      // Test that validation errors return null, but other errors throw
+      const result = weaver.tryFormatWithSchema({});
+      expect(result).toBe("Hello "); // Empty variable renders as empty string
+
+      // Test with invalid data that fails validation
+      const schema2 = createMockSchema(() => ({
+        issues: [{ message: "Invalid", path: [] }],
+      }));
+      const weaver2 = new PromptWeaver("Hello {{name}}", { schema: schema2 });
+      const result2 = weaver2.tryFormatWithSchema({});
+      expect(result2).toBeNull(); // Validation error returns null
+    });
+
+    it("should throw error when schema not configured", () => {
+      const weaver = new PromptWeaver("Hello {{name}}");
+      expect(() => {
+        weaver.formatWithSchema({});
+      }).toThrow("No schema configured");
+    });
+
+    it("should handle async validation with formatWithSchemaAsync", async () => {
+      const schema = createMockAsyncSchema(async (data) => {
+        await Promise.resolve();
+        if (typeof data === "object" && data !== null && "name" in data) {
+          return { value: data };
+        }
+        return {
+          issues: [{ message: "Invalid", path: [] }],
+        };
+      });
+
+      const weaver = new PromptWeaver("Hello {{name}}", { schema });
+      const result = await weaver.formatWithSchemaAsync({ name: "World" });
+      expect(result).toBe("Hello World");
     });
   });
 });

@@ -1,9 +1,9 @@
 import Handlebars from "handlebars";
 import { beforeEach, describe, expect, it } from "vitest";
-import { PromptWeaver } from "../../src/prompt-weaver.js";
-import { registerConditionalHelpers } from "../../src/transformers/conditional.js";
+import { PromptWeaver } from "../../../src/prompt-weaver.js";
+import { registerConditionalHelpers } from "../../../src/transformers/conditional.js";
 
-describe("Conditional Transformers", () => {
+describe("Conditional Transformers Feature", () => {
   beforeEach(() => {
     Handlebars.unregisterHelper("switch");
     Handlebars.unregisterHelper("case");
@@ -18,3 +18,4 @@ describe("Conditional Transformers", () => {
     expect(weaver.format({ value: "c" })).toBe("");
   });
 });
+

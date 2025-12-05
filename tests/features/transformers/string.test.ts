@@ -1,9 +1,9 @@
 import Handlebars from "handlebars";
 import { beforeEach, describe, expect, it } from "vitest";
-import { PromptWeaver } from "../../src/prompt-weaver.js";
-import { registerStringHelpers } from "../../src/transformers/string.js";
+import { PromptWeaver } from "../../../src/prompt-weaver.js";
+import { registerStringHelpers } from "../../../src/transformers/string.js";
 
-describe("String Transformers", () => {
+describe("String Transformers Feature", () => {
   beforeEach(() => {
     // Reset Handlebars helpers before each test
     Handlebars.unregisterHelper("slugify");
@@ -37,3 +37,4 @@ describe("String Transformers", () => {
     expect(weaver.format({ text: "test test" })).toBe("TEST TEST");
   });
 });
+

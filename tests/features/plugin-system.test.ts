@@ -1,9 +1,9 @@
 import Handlebars from "handlebars";
 import { beforeEach, describe, expect, it } from "vitest";
-import { TransformerRegistry } from "../src/core/plugin-system.js";
-import { registerHandlebarsHelpers } from "../src/transformers/index.js";
+import { TransformerRegistry } from "../../src/core/plugin-system.js";
+import { registerHandlebarsHelpers } from "../../src/transformers/index.js";
 
-describe("Plugin System", () => {
+describe("Plugin System Feature", () => {
   beforeEach(() => {
     // Clear any existing helpers
     Handlebars.unregisterHelper("testHelper");
@@ -55,3 +55,4 @@ describe("Plugin System", () => {
     });
   });
 });
+

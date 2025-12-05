@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { extractVariables, TemplateCompilationError, validateTemplate } from "../src/validation.js";
+import { extractVariables, TemplateCompilationError, validateTemplate } from "../../src/validation.js";
 
-describe("Template Validation", () => {
+describe("Template Validation Feature", () => {
   describe("Variable Extraction", () => {
     it("should extract variables excluding helpers and block helpers", () => {
       const template = "Hello {{name}}, {{#if condition}}yes{{/if}}";
@@ -59,3 +59,4 @@ describe("Template Validation", () => {
     });
   });
 });
+
