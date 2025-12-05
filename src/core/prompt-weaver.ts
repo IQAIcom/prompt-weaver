@@ -13,6 +13,47 @@ import { extractVariables, validateTemplate } from "../validation/template-valid
 import type { TransformerRegistry } from "./plugin-system.js";
 
 /**
+ * Simple hash function for template source strings
+ */
+function hashTemplateSource(source: string): string {
+  let hash = 0;
+  for (let i = 0; i < source.length; i++) {
+    const char = source.charCodeAt(i);
+    hash = (hash << 5) - hash + char;
+    hash = hash & hash; // Convert to 32-bit integer
+  }
+  return hash.toString(36);
+}
+
+/**
+ * Template compilation cache
+ */
+class TemplateCache {
+  private cache = new Map<string, TemplateDelegate>();
+
+  get(source: string): TemplateDelegate | undefined {
+    const key = hashTemplateSource(source);
+    return this.cache.get(key);
+  }
+
+  set(source: string, compiled: TemplateDelegate): void {
+    const key = hashTemplateSource(source);
+    this.cache.set(key, compiled);
+  }
+
+  clear(): void {
+    this.cache.clear();
+  }
+
+  size(): number {
+    return this.cache.size;
+  }
+}
+
+// Global template cache (shared across all instances)
+const globalTemplateCache = new TemplateCache();
+
+/**
  * Options for configuring PromptWeaver instance
  */
 export interface PromptWeaverOptions<TSchema extends StandardSchemaV1 = StandardSchemaV1> {
@@ -39,6 +80,11 @@ export interface PromptWeaverOptions<TSchema extends StandardSchemaV1 = Standard
    * ```
    */
   schema?: TSchema;
+  /**
+   * Enable template compilation caching for better performance when reusing templates.
+   * Defaults to true. Set to false to disable caching.
+   */
+  enableCache?: boolean;
 }
 
 /**
@@ -95,7 +141,7 @@ export class PromptWeaver<
 > {
   private readonly template: TemplateDelegate;
   private readonly templateSource: string;
-  private readonly options: Pick<PromptWeaverOptions, "registry" | "schema">;
+  private readonly options: Pick<PromptWeaverOptions, "registry" | "schema" | "enableCache">;
   private readonly registry: TransformerRegistry;
   private readonly schema?: TSchema;
 
@@ -190,6 +236,7 @@ export class PromptWeaver<
     this.options = {
       registry: options.registry,
       schema: options.schema,
+      enableCache: options.enableCache !== false, // Default to true
     };
 
     // Store schema for validation
@@ -236,12 +283,44 @@ export class PromptWeaver<
   /**
    * Compile a template from source string.
    * This method ensures helpers are registered and returns a compiled template function.
+   * Uses caching if enabled to avoid recompiling identical templates.
    * @param templateSource - The template source code as a string
    * @returns A compiled template function
    */
   private compileHandlebarsTemplate(templateSource: string): TemplateDelegate {
+    // Check cache if enabled
+    if (this.options.enableCache) {
+      const cached = globalTemplateCache.get(templateSource);
+      if (cached) {
+        return cached;
+      }
+    }
+
     // Compile the template
-    return Handlebars.compile(templateSource);
+    const compiled = Handlebars.compile(templateSource);
+
+    // Cache if enabled
+    if (this.options.enableCache) {
+      globalTemplateCache.set(templateSource, compiled);
+    }
+
+    return compiled;
+  }
+
+  /**
+   * Clear the global template compilation cache.
+   * Useful for freeing memory or forcing recompilation of all templates.
+   */
+  static clearTemplateCache(): void {
+    globalTemplateCache.clear();
+  }
+
+  /**
+   * Get the size of the global template compilation cache.
+   * @returns Number of cached templates
+   */
+  static getTemplateCacheSize(): number {
+    return globalTemplateCache.size();
   }
 
   /**
@@ -278,11 +357,15 @@ export class PromptWeaver<
 
   /**
    * Register a partial template
+   * Partials are pre-compiled for better performance, avoiding on-the-fly compilation.
    * @param name - Name of the partial
    * @param templateSource - Partial template source
    */
   setPartial(name: string, templateSource: string): void {
-    Handlebars.registerPartial(name, templateSource);
+    // Pre-compile the partial so Handlebars stores it as a function
+    // This avoids on-the-fly compilation in the partial/include helpers
+    const compiled = this.compileHandlebarsTemplate(templateSource);
+    Handlebars.registerPartial(name, compiled);
   }
 
   /**

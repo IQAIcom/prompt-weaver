@@ -437,4 +437,36 @@ describe("Schema Validation Feature", () => {
       expect(result).toBe("Hello World");
     });
   });
+
+  describe("Schema Validation Edge Cases", () => {
+    it("should handle schema validation with optional fields", () => {
+      const schema = z.object({
+        name: z.string(),
+        email: z.string().email().optional(),
+      });
+      const weaver = new PromptWeaver("Hello {{name}}", { schema });
+      expect(weaver.format({ name: "Alice" })).toBe("Hello Alice");
+    });
+
+    it("should throw SchemaValidationError for invalid data", () => {
+      const schema = z.object({
+        name: z.string(),
+        age: z.number(),
+      });
+      const weaver = new PromptWeaver("Hello {{name}}", { schema });
+      expect(() => {
+        weaver.format({ name: "Alice", age: "not-a-number" as unknown as number });
+      }).toThrow(SchemaValidationError);
+    });
+
+    it("should handle schema with default values", () => {
+      const schema = z.object({
+        name: z.string().default("Unknown"),
+        count: z.number().default(0),
+      });
+      const weaver = new PromptWeaver("{{name}}: {{count}}", { schema });
+      // Zod defaults are applied during parsing. Pass an empty object to test this.
+      expect(weaver.format({})).toBe("Unknown: 0");
+    });
+  });
 });

@@ -365,4 +365,24 @@ describe("Collection Transformers Feature", () => {
       expect(weaver.format({ items: "not an array" })).toBe("");
     });
   });
+
+  describe("Empty Collections", () => {
+    it("should handle empty arrays in loops", () => {
+      const template = "{{#each items}}{{this}}{{else}}No items{{/each}}";
+      const weaver = new PromptWeaver(template);
+      expect(weaver.format({ items: [] })).toBe("No items");
+    });
+
+    it("should handle null arrays", () => {
+      const template = "{{#each items}}{{this}}{{else}}No items{{/each}}";
+      const weaver = new PromptWeaver(template);
+      expect(weaver.format({ items: null })).toBe("No items");
+    });
+
+    it("should handle array operations on non-arrays", () => {
+      const template = "{{#each (filter items 'active')}}{{name}}{{/each}}";
+      const weaver = new PromptWeaver(template);
+      expect(weaver.format({ items: "not-an-array" })).toBe("");
+    });
+  });
 });

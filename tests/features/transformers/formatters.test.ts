@@ -222,4 +222,19 @@ describe("Formatters Feature", () => {
       expect(weaver.format({ value: "test" })).toBe("&quot;test&quot;");
     });
   });
+
+  describe("Edge Cases", () => {
+    it("should handle very large numbers", () => {
+      const template = "{{currency amount}}";
+      const weaver = new PromptWeaver(template);
+      expect(weaver.format({ amount: 999999999999 })).toContain("999,999,999,999");
+    });
+
+    it("should handle negative numbers in currency", () => {
+      const template = "{{currency amount}}";
+      const weaver = new PromptWeaver(template);
+      const result = weaver.format({ amount: -1234.56 });
+      expect(result).toContain("1,234.56");
+    });
+  });
 });

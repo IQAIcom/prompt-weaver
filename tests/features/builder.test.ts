@@ -61,4 +61,34 @@ describe("Builder Feature", () => {
       expect(result).toContain("Hello World");
     });
   });
+
+  describe("Edge Cases", () => {
+    it("should handle empty builder", () => {
+      const builder = new PromptBuilder();
+      expect(builder.build()).toBe("");
+    });
+
+    it("should handle builder with only separators", () => {
+      const builder = new PromptBuilder().separator().separator();
+      const result = builder.build();
+      expect(result.split("---").length).toBeGreaterThan(1);
+    });
+
+    it("should handle json() with circular references gracefully", () => {
+      const builder = new PromptBuilder();
+      const obj: Record<string, unknown> = { name: "test" };
+      obj.self = obj; // Circular reference
+      builder.json(obj);
+      // Should not throw, but JSON.stringify will fail
+      const result = builder.build();
+      expect(result).toBeTruthy();
+    });
+
+    it("should handle checkbox with empty text", () => {
+      const builder = new PromptBuilder();
+      builder.checkbox("", true);
+      const result = builder.build();
+      expect(result).toContain("[x]");
+    });
+  });
 });

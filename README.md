@@ -28,9 +28,11 @@ It allows you to build dynamic prompts using **templates**, validate input data 
 
 - **🔧 Rich Toolset**: Built-in transformers for Dates, Strings, JSON, Currencies, and Arrays.
 
-- **🏗️ Fluent Builder API**: Construct prompts programmatically using a chainable JavaScript/TypeScript API.
+- **🏗️ Fluent Builder API**: Construct prompts programmatically using a chainable JavaScript/TypeScript API with support for JSON, links, images, and checkboxes.
 
-- **🧩 Reusable Partials**: Don't repeat yourself—compose prompts from reusable fragments (headers, footers, rules).
+- **🧩 Reusable Partials**: Don't repeat yourself—compose prompts from reusable fragments (headers, footers, rules). Partials are pre-compiled for optimal performance.
+
+- **⚡ Performance Optimized**: Template compilation caching and pre-compiled partials for faster rendering.
 
 - **🎯 Extensible**: Create custom transformers and helpers to suit your specific domain.
 
@@ -151,7 +153,13 @@ const builder = new PromptBuilder()
   .heading(1, "User Profile")
   .section("Info", "Name: {{name}}")
   .list(["Rule 1", "Rule 2"])
-  .conditional(true, "✅ Verified", "❌ Unverified");
+  .conditional(true, "✅ Verified", "❌ Unverified")
+  .json({ version: "1.0", status: "active" }) // Format JSON
+  .link("Documentation", "https://example.com") // Add markdown link
+  .checkboxes([
+    { text: "Task 1", checked: true },
+    { text: "Task 2", checked: false }
+  ]); // Add task list
 
 // Convert to Weaver to render data
 const weaver = builder.toPromptWeaver();
@@ -237,7 +245,11 @@ Due {{relativeTime deadline}}        <!-- Shows relative time: "in 3 days" -->
 ```handlebars
 {{ellipsis text 50}}                  <!-- Truncate to 50 chars -->
 {{formatDate date "YYYY-MM-DD"}}      <!-- Format date with pattern -->
+{{formatDate date "MMMM DD, YYYY"}}  <!-- Full month name: December 25, 2023 -->
+{{formatDate date "DDDD, MMM DD"}}    <!-- Day name: Monday, Dec 25 -->
 {{replace text "old" "new"}}          <!-- Replace text -->
+{{filter users "status" "active"}}    <!-- Filter by property equals value -->
+{{reduce numbers 0 "sum"}}            <!-- Reduce with operation -->
 ```
 
 **Chaining transformers in expressions:**
@@ -404,8 +416,12 @@ Prompt Weaver comes with a massive library of transformers to format data direct
 | Transformer | Example | Result |
 | :--- | :--- | :--- |
 | `formatDate` | `{{formatDate date "YYYY-MM-DD"}}` | 2023-12-25 |
+| `formatDate` | `{{formatDate date "MMMM DD, YYYY"}}` | December 25, 2023 |
+| `formatDate` | `{{formatDate date "DDDD, MMM DD"}}` | Monday, Dec 25 |
 | `relativeTime` | `{{relativeTime date}}` | 2 hours ago |
 | `isToday` | `{{isToday date}}` | true/false |
+
+**Date format patterns:** `YYYY` (4-digit year), `YY` (2-digit year), `MMMM` (full month), `MMM` (abbreviated month), `MM` (2-digit month), `M` (single digit month), `DDDD` (full day), `DDD` (abbreviated day), `DD` (2-digit day), `D` (single digit day), `HH` (hours), `mm` (minutes), `ss` (seconds)
 
 **Also available:** `formatTime`, `formatDateTime`, `isPast`, `isFuture`, `addDays`, `subtractDays`, `addHours`, `subtractHours`, `addMinutes`, `subtractMinutes`, `timestamp`, `unixTimestamp`
 
@@ -438,9 +454,11 @@ Prompt Weaver comes with a massive library of transformers to format data direct
 
 | Transformer | Example | Description |
 | :--- | :--- | :--- |
-| `filter` | `{{filter users "active"}}` | Filter array by property |
+| `filter` | `{{filter users "active"}}` | Filter array by property truthiness |
+| `filter` | `{{filter users "status" "active"}}` | Filter array by property equals value |
 | `map` | `{{map users "name"}}` | Extract property from objects |
 | `sort` | `{{sort items "price"}}` | Sort array |
+| `reduce` | `{{reduce numbers 0 "sum"}}` | Reduce array with operation (sum, multiply, max, min, concat) |
 | `first` / `last` | `{{first items}}` | Get first/last item |
 | `pick` | `{{pick user "name" "id"}}` | Pick specific object keys |
 
@@ -658,6 +676,7 @@ interface PromptWeaverOptions {
   registry?: TransformerRegistry; // Custom transformer registry (defaults to global)
   partials?: Record<string, string>; // Partial templates
   schema?: StandardSchemaV1; // Standard Schema validator (Zod, Valibot, ArkType, etc.)
+  enableCache?: boolean; // Enable template compilation caching (default: true)
 }
 
 // Methods
@@ -683,6 +702,12 @@ All methods return `this` for method chaining.
 - `.heading(level, text)` - Add heading (level 1-6)
 - `.quote(text)` - Add blockquote
 - `.separator(char?)` - Add separator line (default: "---")
+- `.horizontalRule(char?)` - Alias for separator
+- `.json(data, indent?)` - Format JSON data with indentation (default: 2 spaces)
+- `.link(text, url)` - Create markdown link
+- `.image(alt, url, title?)` - Create markdown image
+- `.checkbox(text, checked?)` - Add checkbox/task list item
+- `.checkboxes(items)` - Add multiple checkboxes (items can be strings or `{text, checked}` objects)
 
 **Control Flow Methods:**
 - `.conditional(condition, ifTrue, ifFalse?)` - Add conditional content based on boolean
@@ -954,10 +979,10 @@ const output = weaver.format({
 
 ## ⚠️ Error Handling
 
-Prompt Weaver provides specific error classes for debugging.
+Prompt Weaver provides specific error classes for debugging with enhanced error messages.
 
-- `SchemaValidationError`: Thrown when data doesn't match your Zod/Valibot schema.
-- `TemplateCompilationError`: Thrown when your Handlebars syntax is broken (e.g., unclosed tags).
+- `SchemaValidationError`: Thrown when data doesn't match your Zod/Valibot schema. Includes detailed validation issues.
+- `TemplateCompilationError`: Thrown when your Handlebars syntax is broken (e.g., unclosed tags). Includes surrounding code context, line numbers, and helpful suggestions.
 
 **Example:**
 
@@ -981,7 +1006,10 @@ try {
     // Detailed validation error messages from your schema library
   } else if (error instanceof TemplateCompilationError) {
     console.error(error.getFormattedMessage());
-    // "Template syntax error (line: 10, column: 5)"
+    // Enhanced error message includes:
+    // - Line and column numbers
+    // - Surrounding code context
+    // - Helpful suggestions for fixing common errors
   }
 }
 ```
