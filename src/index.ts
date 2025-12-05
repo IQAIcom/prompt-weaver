@@ -1,16 +1,10 @@
-export { PromptBuilder } from "./core/builder.js";
 export type { TemplateHelper, TransformerConfig } from "./core/plugin-system.js";
+export { PromptBuilder } from "./core/prompt-builder.js";
 export {
   PromptWeaver,
   type PromptWeaverOptions,
   type TemplateMetadata,
 } from "./core/prompt-weaver.js";
-// Standard Schema validation exports
-export {
-  SchemaValidationError,
-  type SchemaValidationResult,
-  type StandardSchemaV1,
-} from "./validation/schema-validation.js";
 export {
   formatters,
   getGlobalRegistry,
@@ -28,6 +22,12 @@ export {
   registerTransformer,
   TransformerRegistry,
 } from "./transformers/index.js";
+// Standard Schema validation exports
+export {
+  SchemaValidationError,
+  type SchemaValidationResult,
+  type StandardSchemaV1,
+} from "./validation/schema-validation.js";
 export {
   extractVariables,
   TemplateCompilationError,

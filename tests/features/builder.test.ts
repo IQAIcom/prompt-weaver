@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { PromptBuilder } from "../../src/core/builder.js";
+import { PromptBuilder } from "../../src/core/prompt-builder.js";
 import { PromptWeaver } from "../../src/core/prompt-weaver.js";
 
 describe("Builder Feature", () => {
