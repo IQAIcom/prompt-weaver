@@ -17,7 +17,9 @@
       "require": "./dist/index.js"
     }
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
@@ -25,11 +27,23 @@
     "lint:fix": "biome check --write .",
     "format": "biome format --write .",
     "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest run --coverage",
     "changeset": "changeset",
     "version": "changeset version",
     "release": "pnpm run build && changeset publish"
   },
-  "keywords": ["template", "engine", "prompt", "weaver", "transformer", "ai", "llm"],
+  "keywords": [
+    "template",
+    "engine",
+    "prompt",
+    "weaver",
+    "transformer",
+    "ai",
+    "llm"
+  ],
   "author": "",
   "license": "MIT",
   "dependencies": {
@@ -40,8 +54,10 @@
     "@biomejs/biome": "^1.9.4",
     "@changesets/cli": "^2.27.9",
     "@types/handlebars": "^4.0.0",
+    "@vitest/ui": "^4.0.15",
     "tsup": "^8.3.5",
-    "typescript": "^5.6.3"
+    "typescript": "^5.6.3",
+    "vitest": "^4.0.15"
   },
   "peerDependenciesMeta": {}
 }
