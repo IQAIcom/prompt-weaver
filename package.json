@@ -17,7 +17,9 @@
       "require": "./dist/index.js"
     }
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
@@ -31,7 +33,15 @@
     "version": "changeset version",
     "release": "pnpm run build && changeset publish"
   },
-  "keywords": ["template", "engine", "prompt", "weaver", "transformer", "ai", "llm"],
+  "keywords": [
+    "template",
+    "engine",
+    "prompt",
+    "weaver",
+    "transformer",
+    "ai",
+    "llm"
+  ],
   "author": "",
   "license": "MIT",
   "dependencies": {

@@ -2,11 +2,11 @@ import type { StandardSchemaV1 } from "@standard-schema/spec";
 import Handlebars, { type TemplateDelegate } from "handlebars";
 import type { TemplateHelper, TransformerRegistry } from "./core/plugin-system.js";
 import {
-  SchemaValidationError,
-  type SchemaValidationResult,
   isStandardSchema,
   parseWithSchema,
   parseWithSchemaAsync,
+  SchemaValidationError,
+  type SchemaValidationResult,
   validateWithSchema,
   validateWithSchemaAsync,
 } from "./schema-validation.js";

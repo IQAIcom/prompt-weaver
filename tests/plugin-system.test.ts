@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeEach } from "vitest";
 import Handlebars from "handlebars";
+import { beforeEach, describe, expect, it } from "vitest";
 import { TransformerRegistry } from "../src/core/plugin-system.js";
 import { registerHandlebarsHelpers } from "../src/transformers/index.js";
 
@@ -55,4 +55,3 @@ describe("Plugin System", () => {
     });
   });
 });
-

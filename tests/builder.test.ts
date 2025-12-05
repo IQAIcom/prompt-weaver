@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import { PromptBuilder } from "../src/builder.js";
 import { PromptWeaver } from "../src/prompt-weaver.js";
 
@@ -27,7 +27,13 @@ describe("PromptBuilder", () => {
   describe("Complex Content Methods", () => {
     it("should format markdown table correctly", () => {
       const builder = new PromptBuilder();
-      builder.table(["Name", "Age"], [["Alice", "30"], ["Bob", "25"]]);
+      builder.table(
+        ["Name", "Age"],
+        [
+          ["Alice", "30"],
+          ["Bob", "25"],
+        ]
+      );
       const result = builder.build();
       expect(result).toContain("| Name | Age |");
       expect(result).toContain("| --- | --- |");
@@ -56,4 +62,3 @@ describe("PromptBuilder", () => {
     });
   });
 });
-

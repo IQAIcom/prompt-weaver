@@ -1,7 +1,7 @@
-import { describe, it, expect, beforeEach } from "vitest";
 import Handlebars from "handlebars";
-import { registerConditionalHelpers } from "../../src/transformers/conditional.js";
+import { beforeEach, describe, expect, it } from "vitest";
 import { PromptWeaver } from "../../src/prompt-weaver.js";
+import { registerConditionalHelpers } from "../../src/transformers/conditional.js";
 
 describe("Conditional Transformers", () => {
   beforeEach(() => {
@@ -18,4 +18,3 @@ describe("Conditional Transformers", () => {
     expect(weaver.format({ value: "c" })).toBe("");
   });
 });
-

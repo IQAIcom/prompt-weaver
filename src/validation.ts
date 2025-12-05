@@ -73,7 +73,7 @@ export function extractVariables(templateSource: string): Set<string> {
  */
 function extractErrorLocation(
   error: Error,
-  source?: string
+  _source?: string
 ): {
   lineNumber?: number;
   columnNumber?: number;

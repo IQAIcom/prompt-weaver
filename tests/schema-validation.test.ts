@@ -1,13 +1,12 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import {
   isStandardSchema,
+  parseWithSchema,
+  SchemaValidationError,
   validateWithSchema,
   validateWithSchemaAsync,
-  SchemaValidationError,
-  parseWithSchema,
 } from "../src/schema-validation.js";
-import { createMockSchema, createMockAsyncSchema } from "./helpers.js";
-import type { StandardSchemaV1 } from "@standard-schema/spec";
+import { createMockAsyncSchema, createMockSchema } from "./helpers.js";
 
 describe("Schema Validation", () => {
   describe("Schema Detection", () => {
@@ -87,4 +86,3 @@ describe("Schema Validation", () => {
     });
   });
 });
-

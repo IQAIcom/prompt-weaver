@@ -19,9 +19,7 @@ export function createMockSchema(
  * Create a mock async Standard Schema validator for testing
  */
 export function createMockAsyncSchema(
-  validateFn: (
-    data: unknown
-  ) => Promise<{ value?: unknown; issues?: StandardSchemaV1.Issue[] }>
+  validateFn: (data: unknown) => Promise<{ value?: unknown; issues?: StandardSchemaV1.Issue[] }>
 ): StandardSchemaV1 {
   return {
     "~standard": {
@@ -31,4 +29,3 @@ export function createMockAsyncSchema(
     },
   } as StandardSchemaV1;
 }
-

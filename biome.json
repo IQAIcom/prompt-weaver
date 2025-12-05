@@ -7,7 +7,7 @@
   },
   "files": {
     "ignoreUnknown": false,
-    "ignore": ["dist", "node_modules", ".changeset"]
+    "includes": ["**", "!dist", "!node_modules", "!.changeset"]
   },
   "formatter": {
     "enabled": true,
@@ -18,8 +18,14 @@
     "lineWidth": 100,
     "attributePosition": "auto"
   },
-  "organizeImports": {
-    "enabled": true
+  "assist": {
+    "actions": {
+      "source": {
+        "organizeImports": {
+          "level": "on"
+        }
+      }
+    }
   },
   "linter": {
     "enabled": true,

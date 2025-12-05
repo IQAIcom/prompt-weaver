@@ -1,7 +1,7 @@
-import { describe, it, expect, beforeEach } from "vitest";
 import Handlebars from "handlebars";
-import { registerStringHelpers } from "../../src/transformers/string.js";
+import { beforeEach, describe, expect, it } from "vitest";
 import { PromptWeaver } from "../../src/prompt-weaver.js";
+import { registerStringHelpers } from "../../src/transformers/string.js";
 
 describe("String Transformers", () => {
   beforeEach(() => {
@@ -37,4 +37,3 @@ describe("String Transformers", () => {
     expect(weaver.format({ text: "test test" })).toBe("TEST TEST");
   });
 });
-
