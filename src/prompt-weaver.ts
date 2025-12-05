@@ -210,9 +210,12 @@ export class PromptWeaver<
    * Create a new PromptWeaver from composed templates
    * @param templateSources - Array of template source strings
    * @param options - Options for the new PromptWeaver instance
-   * @returns New PromptWeaver instance
+   * @returns New PromptWeaver instance with proper type inference from schema
    */
-  static composeAndCreate(templateSources: string[], options?: PromptWeaverOptions): PromptWeaver {
+  static composeAndCreate<TSchema extends StandardSchemaV1 = StandardSchemaV1>(
+    templateSources: string[],
+    options?: PromptWeaverOptions<TSchema>
+  ): PromptWeaver<Record<string, unknown>, TSchema> {
     const composed = PromptWeaver.compose(templateSources);
     return new PromptWeaver(composed, options);
   }
@@ -346,7 +349,7 @@ export class PromptWeaver<
    * Format template with schema validation
    * Validates data against the configured schema before rendering
    *
-   * @param data - Data to validate and render
+   * @param data - Data to validate and render (type-safe when schema is provided)
    * @returns Rendered template string
    * @throws {SchemaValidationError} If schema validation fails
    * @throws Error if no schema is configured
@@ -362,11 +365,11 @@ export class PromptWeaver<
    *
    * const engine = new PromptWeaver(template, { schema });
    *
-   * // This will validate data before rendering
+   * // This will validate data before rendering with full type inference
    * const output = engine.formatWithSchema({ name: 'Test', count: 5 });
    * ```
    */
-  formatWithSchema(data: unknown): string {
+  formatWithSchema(data: StandardSchemaV1.InferInput<TSchema>): string {
     const schema = this._ensureSchema();
 
     // Validate and parse data with schema
@@ -379,12 +382,12 @@ export class PromptWeaver<
    * Format template with schema validation (async)
    * Validates data against the configured schema before rendering
    *
-   * @param data - Data to validate and render
+   * @param data - Data to validate and render (type-safe when schema is provided)
    * @returns Promise resolving to rendered template string
    * @throws {SchemaValidationError} If schema validation fails
    * @throws Error if no schema is configured
    */
-  async formatWithSchemaAsync(data: unknown): Promise<string> {
+  async formatWithSchemaAsync(data: StandardSchemaV1.InferInput<TSchema>): Promise<string> {
     const schema = this._ensureSchema();
 
     // Validate and parse data with schema
@@ -396,7 +399,7 @@ export class PromptWeaver<
   /**
    * Try to format template with schema validation, returning null on failure
    *
-   * @param data - Data to validate and render
+   * @param data - Data to validate and render (type-safe when schema is provided)
    * @returns Rendered template string or null if validation fails
    *
    * @example
@@ -407,7 +410,7 @@ export class PromptWeaver<
    * }
    * ```
    */
-  tryFormatWithSchema(data: unknown): string | null {
+  tryFormatWithSchema(data: StandardSchemaV1.InferInput<TSchema>): string | null {
     try {
       return this.formatWithSchema(data);
     } catch (error) {

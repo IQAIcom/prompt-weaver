@@ -1,3 +1,4 @@
+import type { StandardSchemaV1 } from "@standard-schema/spec";
 import { PromptWeaver, type PromptWeaverOptions } from "./prompt-weaver.js";
 
 /**
@@ -164,9 +165,11 @@ export class PromptBuilder {
   /**
    * Build and create a PromptWeaver instance
    * @param options - Options for PromptWeaver
-   * @returns PromptWeaver instance
+   * @returns PromptWeaver instance with proper type inference from schema
    */
-  toPromptWeaver(options?: PromptWeaverOptions): PromptWeaver {
+  toPromptWeaver<TSchema extends StandardSchemaV1 = StandardSchemaV1>(
+    options?: PromptWeaverOptions<TSchema>
+  ): PromptWeaver<Record<string, unknown>, TSchema> {
     const template = this.build();
     return new PromptWeaver(template, options);
   }
