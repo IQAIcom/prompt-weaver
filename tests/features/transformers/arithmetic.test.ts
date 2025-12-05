@@ -1,6 +1,6 @@
 import Handlebars from "handlebars";
 import { beforeEach, describe, expect, it } from "vitest";
-import { PromptWeaver } from "../../../src/prompt-weaver.js";
+import { PromptWeaver } from "../../../src/core/prompt-weaver.js";
 import { registerArithmeticHelpers } from "../../../src/transformers/arithmetic.js";
 
 describe("Arithmetic Transformers Feature", () => {

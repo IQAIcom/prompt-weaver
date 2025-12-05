@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { z } from "zod/v4";
-import { PromptWeaver } from "../../src/prompt-weaver.js";
+import { PromptWeaver } from "../../src/core/prompt-weaver.js";
 import {
   createSafeParser,
   createSafeParserAsync,
@@ -12,7 +12,7 @@ import {
   SchemaValidationError,
   validateWithSchema,
   validateWithSchemaAsync,
-} from "../../src/schema-validation.js";
+} from "../../src/validation/schema-validation.js";
 import { createMockAsyncSchema, createMockSchema } from "../helpers.js";
 
 describe("Schema Validation Feature", () => {

@@ -1,7 +1,7 @@
 import Handlebars from "handlebars";
 import { beforeEach, describe, expect, it } from "vitest";
 import { TransformerRegistry } from "../../src/core/plugin-system.js";
-import { PromptWeaver } from "../../src/prompt-weaver.js";
+import { PromptWeaver } from "../../src/core/prompt-weaver.js";
 import { registerTransformer } from "../../src/transformers/index.js";
 
 describe("Transformer Usage Feature", () => {

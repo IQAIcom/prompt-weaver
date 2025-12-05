@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { PromptWeaver } from "../../src/prompt-weaver.js";
+import { PromptWeaver } from "../../src/core/prompt-weaver.js";
 
 describe("Partials Feature", () => {
   describe("Registration via Options", () => {

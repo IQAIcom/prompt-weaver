@@ -1,6 +1,6 @@
 import Handlebars from "handlebars";
 import { beforeEach, describe, expect, it } from "vitest";
-import { PromptWeaver } from "../../../src/prompt-weaver.js";
+import { PromptWeaver } from "../../../src/core/prompt-weaver.js";
 import { registerStringHelpers } from "../../../src/transformers/string.js";
 
 describe("String Transformers Feature", () => {

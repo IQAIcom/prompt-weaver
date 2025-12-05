@@ -3,7 +3,7 @@ import {
   extractVariables,
   TemplateCompilationError,
   validateTemplate,
-} from "../../src/validation.js";
+} from "../../src/validation/template-validation.js";
 
 describe("Template Validation Feature", () => {
   describe("Variable Extraction", () => {

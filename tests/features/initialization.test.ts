@@ -1,6 +1,6 @@
 import type { StandardSchemaV1 } from "@standard-schema/spec";
 import { describe, expect, it } from "vitest";
-import { PromptWeaver } from "../../src/prompt-weaver.js";
+import { PromptWeaver } from "../../src/core/prompt-weaver.js";
 
 describe("Initialization Feature", () => {
   describe("Constructor - Error Handling", () => {
