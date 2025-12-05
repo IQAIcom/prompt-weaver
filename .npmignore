@@ -1,0 +1,8 @@
+src/
+tsconfig.json
+tsup.config.ts
+biome.json
+.changeset/
+*.log
+.DS_Store
+
