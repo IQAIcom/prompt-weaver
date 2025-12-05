@@ -1,16 +1,27 @@
-name: Lint Checks
+name: Push checks
+
 on: [push]
+
 jobs:
-  ci:
-    name: Lint using biome
+  Checkout:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Setup Node.js and pnpm
-        uses: wyvox/action-setup-pnpm@v3
+        uses: actions/checkout@v4
         with:
-          node-version: '18'
-      - name: Lint biome
-        run: pnpm biome ci .
+          fetch-depth: 1
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.0.0
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.0.0
+          cache: 'pnpm'
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Biome Lint Check
+        run: pnpm lint
+      - name: Type Check
+        run: pnpm typecheck
