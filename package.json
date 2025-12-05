@@ -17,9 +17,7 @@
       "require": "./dist/index.js"
     }
   },
-  "files": [
-    "dist"
-  ],
+  "files": ["dist"],
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
@@ -27,19 +25,13 @@
     "lint:fix": "biome check --write .",
     "format": "biome format --write .",
     "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "changeset": "changeset",
     "version": "changeset version",
     "release": "pnpm run build && changeset publish"
   },
-  "keywords": [
-    "template",
-    "engine",
-    "prompt",
-    "weaver",
-    "transformer",
-    "ai",
-    "llm"
-  ],
+  "keywords": ["template", "engine", "prompt", "weaver", "transformer", "ai", "llm"],
   "author": "",
   "license": "MIT",
   "dependencies": {
