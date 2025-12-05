@@ -242,12 +242,16 @@ export class PromptBuilder {
    * Build and create a PromptWeaver instance
    * @param options - Options for PromptWeaver
    * @returns PromptWeaver instance with proper type inference from schema
+   *
+   * Note: Since PromptBuilder constructs templates dynamically, automatic type inference
+   * from the template is not available. Use a schema for type safety, or use
+   * `new PromptWeaver(template as const)` with a literal template string.
    */
   toPromptWeaver<TSchema extends StandardSchemaV1 = StandardSchemaV1>(
     options?: PromptWeaverOptions<TSchema>
-  ) {
+  ): PromptWeaver<string, TSchema> {
     const template = this.build();
-    return new PromptWeaver<TSchema>(template, options);
+    return new PromptWeaver<string, TSchema>(template, options);
   }
 
   /**

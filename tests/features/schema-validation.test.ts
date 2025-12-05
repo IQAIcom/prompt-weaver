@@ -374,6 +374,7 @@ describe("Schema Validation Feature", () => {
 
       const weaver = new PromptWeaver("Hello {{name}}", { schema });
       expect(() => {
+        // @ts-expect-error - Intentionally passing empty object to test validation
         weaver.format({});
       }).toThrow(SchemaValidationError);
     });
@@ -392,6 +393,7 @@ describe("Schema Validation Feature", () => {
       const weaver = new PromptWeaver("Hello {{name}}", { schema });
       let result: string | null = null;
       try {
+        // @ts-expect-error - Intentionally passing empty object to test validation
         result = weaver.format({});
       } catch (error) {
         if (error instanceof SchemaValidationError) {
@@ -428,6 +430,7 @@ describe("Schema Validation Feature", () => {
       });
 
       const weaver = new PromptWeaver("Hello {{name}}", { schema });
+      // @ts-expect-error - Intentionally passing empty object to test validation
       await expect(weaver.formatAsync({})).rejects.toThrow(SchemaValidationError);
     });
 

@@ -75,10 +75,12 @@ describe("Transformer Usage Feature", () => {
 
       // Global instance should have global helper
       const weaver1 = new PromptWeaver(template1);
+      // @ts-expect-error - Type inference can't distinguish no-arg helpers from variables
       expect(weaver1.format({})).toBe("global");
 
       // Scoped instance should only have scoped helper
       const weaver2 = new PromptWeaver(template2, { registry });
+      // @ts-expect-error - Type inference can't distinguish no-arg helpers from variables
       expect(weaver2.format({})).toBe("scoped");
     });
 

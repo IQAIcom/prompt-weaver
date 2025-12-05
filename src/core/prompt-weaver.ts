@@ -1,6 +1,7 @@
 import type { StandardSchemaV1 } from "@standard-schema/spec";
 import Handlebars, { type TemplateDelegate } from "handlebars";
 import { getGlobalRegistry, registerHandlebarsHelpers } from "../transformers/index.js";
+import type { InferTemplateData } from "../types/template-inference.js";
 import {
   isStandardSchema,
   parseWithSchema,
@@ -100,12 +101,23 @@ export interface TemplateMetadata {
 }
 
 /**
- * Helper type to infer data type from schema.
- * When a specific schema is provided, infers the input type (what users pass to format()).
- * When no schema is provided (TSchema is the default StandardSchemaV1), uses Record<string, unknown>.
+ * Helper type to infer data type.
+ * Priority:
+ * 1. If schema provides a concrete type (has keys), use it
+ * 2. If template is a literal string, use InferTemplateData
+ * 3. Otherwise, fall back to Record<string, unknown>
  */
-type InferDataFromSchema<TSchema extends StandardSchemaV1> =
-  StandardSchemaV1.InferInput<TSchema> extends Record<string, unknown>
+type InferData<
+  TTemplate extends string,
+  TSchema extends StandardSchemaV1,
+> = // Check if schema provides useful type info (has at least one key)
+keyof StandardSchemaV1.InferInput<TSchema> extends never
+  ? // No schema type info - try template inference
+    string extends TTemplate
+    ? Record<string, unknown> // Template is generic string, no inference possible
+    : InferTemplateData<TTemplate> // Use template inference
+  : // Schema provides type info - use it
+    StandardSchemaV1.InferInput<TSchema> extends Record<string, unknown>
     ? StandardSchemaV1.InferInput<TSchema>
     : Record<string, unknown>;
 
@@ -113,31 +125,49 @@ type InferDataFromSchema<TSchema extends StandardSchemaV1> =
  * Template engine for rendering Prompt Weaver templates.
  * Provides a clean API for building and rendering prompts with a powerful template system.
  *
+ * Type inference is automatic:
+ * - With schema: `format()` requires the schema's input type
+ * - Without schema: `format()` infers types from template (use `as const`)
+ *
+ * @template TTemplate - The template string literal type (for automatic inference)
  * @template TSchema - Standard Schema validator type
- * @template TData - Type of the data object expected by the template (inferred from schema when provided)
+ * @template TData - Type of the data object (auto-inferred from template or schema)
  *
  * @example
  * ```ts
- * import promptTemplate from './trading-prompt.hbs';
- * const engine = new PromptWeaver(promptTemplate);
- * const output = engine.format({ name: "World", value: 100 });
+ * // Automatic type inference from template (use `as const`)
+ * const template = `Hello {{name}}! You have {{count}} items.` as const;
+ * const engine = new PromptWeaver(template);
+ * // format() infers: { name: unknown; count: unknown }
+ * engine.format({ name: "Alice", count: 5 });
  * ```
  *
  * @example
  * ```ts
+ * // Array inference from {{#each}}
+ * const template = `{{#each items}}{{title}}{{/each}}` as const;
+ * const engine = new PromptWeaver(template);
+ * // format() infers: { items: Array<{ title: unknown }> }
+ * engine.format({ items: [{ title: "Item 1" }] });
+ * ```
+ *
+ * @example
+ * ```ts
+ * // With schema for specific types + runtime validation
  * import { z } from 'zod';
  * const schema = z.object({
  *   name: z.string(),
  *   age: z.number(),
  * });
  * const engine = new PromptWeaver(template, { schema });
- * // format() now requires { name: string; age: number }
- * const output = engine.format({ name: "World", age: 30 });
+ * // format() requires { name: string; age: number }
+ * engine.format({ name: "World", age: 30 });
  * ```
  */
 export class PromptWeaver<
+  TTemplate extends string = string,
   TSchema extends StandardSchemaV1 = StandardSchemaV1,
-  TData extends Record<string, unknown> = InferDataFromSchema<TSchema>,
+  TData extends Record<string, unknown> = InferData<TTemplate, TSchema>,
 > {
   private readonly template: TemplateDelegate;
   private readonly templateSource: string;
@@ -217,11 +247,11 @@ export class PromptWeaver<
 
   /**
    * Create a new template engine instance.
-   * @param templateSource - Template source string or imported template module
+   * @param templateSource - Template source string (use `as const` for type inference) or imported template module
    * @param options - Configuration options
    */
   constructor(
-    templateSource: string | { default?: string },
+    templateSource: TTemplate | { default?: string },
     options: PromptWeaverOptions<TSchema> = {}
   ) {
     // Handle both direct string imports and module imports (from webpack/vite)
@@ -338,13 +368,16 @@ export class PromptWeaver<
    * @param templateSources - Array of template source strings
    * @param options - Options for the new PromptWeaver instance
    * @returns New PromptWeaver instance with proper type inference from schema
+   *
+   * Note: Since templates are composed at runtime, automatic type inference
+   * from the template is not available. Use a schema for type safety.
    */
   static composeAndCreate<TSchema extends StandardSchemaV1 = StandardSchemaV1>(
     templateSources: string[],
     options?: PromptWeaverOptions<TSchema>
-  ): PromptWeaver<TSchema, InferDataFromSchema<TSchema>> {
+  ): PromptWeaver<string, TSchema> {
     const composed = PromptWeaver.compose(templateSources);
-    return new PromptWeaver(composed, options);
+    return new PromptWeaver<string, TSchema>(composed, options);
   }
 
   /**

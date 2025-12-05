@@ -376,6 +376,7 @@ describe("Collection Transformers Feature", () => {
     it("should handle null arrays", () => {
       const template = "{{#each items}}{{this}}{{else}}No items{{/each}}";
       const weaver = new PromptWeaver(template);
+      // @ts-expect-error - Testing null handling for arrays
       expect(weaver.format({ items: null })).toBe("No items");
     });
 

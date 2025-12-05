@@ -23,6 +23,7 @@ describe("Template Validation Feature", () => {
     it("should handle missing variables gracefully", () => {
       const template = "Hello {{name}}, age: {{age}}";
       const weaver = new PromptWeaver(template);
+      // @ts-expect-error - Testing graceful handling of missing data
       expect(weaver.format({ name: "Alice" })).toBe("Hello Alice, age: ");
     });
 

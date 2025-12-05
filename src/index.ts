@@ -33,3 +33,12 @@ export {
   TemplateCompilationError,
   validateTemplate,
 } from "./validation/template-validation.js";
+// Template type inference (compile-time)
+export {
+  createTypedTemplate,
+  type InferTemplateData,
+  type TemplateArrays,
+  type TemplateConditions,
+  type TemplateDataType,
+  type TemplateVariables,
+} from "./types/template-inference.js";
