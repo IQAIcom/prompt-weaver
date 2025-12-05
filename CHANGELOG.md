@@ -1,5 +1,11 @@
 # @iqai/prompt-weaver
 
+## 1.0.1
+
+### Patch Changes
+
+- 79b9d80: Applying the patch: replacing index.mjs with index.js in the module field and the import export.
+
 ## 1.0.0
 
 ### Major Changes
