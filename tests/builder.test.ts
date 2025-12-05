@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import { PromptBuilder } from "../src/builder.js";
 import { PromptWeaver } from "../src/prompt-weaver.js";
 

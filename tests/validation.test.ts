@@ -1,5 +1,5 @@
-import { describe, it, expect } from "vitest";
-import { extractVariables, validateTemplate, TemplateCompilationError } from "../src/validation.js";
+import { describe, expect, it } from "vitest";
+import { TemplateCompilationError, extractVariables, validateTemplate } from "../src/validation.js";
 
 describe("Template Validation", () => {
   describe("Variable Extraction", () => {
