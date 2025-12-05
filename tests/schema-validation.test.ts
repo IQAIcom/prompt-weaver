@@ -119,7 +119,7 @@ describe("Schema Validation", () => {
       const result = validateWithSchema(schema, { name: 123, age: -5 });
       expect(result.success).toBe(false);
       expect(result.issues).toBeDefined();
-      expect(result.issues!.length).toBeGreaterThan(0);
+      expect(result.issues?.[0]).toBeDefined();
     });
 
     it("should parse valid data with Zod schema", () => {
@@ -240,7 +240,11 @@ describe("Schema Validation", () => {
           // Simulate async check (e.g., database lookup)
           await new Promise((resolve) => setTimeout(resolve, 10));
           if (ctx.value === "taken") {
-            ctx.issues.push({ code: "custom", input: ctx.value, message: "Username already taken" });
+            ctx.issues.push({
+              code: "custom",
+              input: ctx.value,
+              message: "Username already taken",
+            });
           }
         }),
       });
@@ -340,7 +344,7 @@ describe("Schema Validation", () => {
       const result = validateWithSchema(schema, { name: 123, age: "invalid" });
       expect(result.success).toBe(false);
 
-      const formatted = formatValidationIssues(result.issues!);
+      const formatted = formatValidationIssues(result.issues ?? []);
       expect(formatted).toContain("1.");
       expect(typeof formatted).toBe("string");
     });

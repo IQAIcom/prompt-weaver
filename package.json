@@ -52,6 +52,7 @@
     "@biomejs/biome": "^2.3.8",
     "@changesets/cli": "^2.27.9",
     "@types/handlebars": "^4.0.0",
+    "@types/node": "^24.10.1",
     "@vitest/ui": "^4.0.15",
     "tsup": "^8.3.5",
     "typescript": "^5.6.3",
