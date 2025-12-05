@@ -352,7 +352,7 @@ describe("Schema Validation Feature", () => {
   });
 
   describe("PromptWeaver Integration", () => {
-    it("should validate and render with formatWithSchema (success)", () => {
+    it("should validate and render with format() when schema is provided (success)", () => {
       const schema = createMockSchema((data) => {
         if (typeof data === "object" && data !== null && "name" in data) {
           return { value: data };
@@ -363,7 +363,7 @@ describe("Schema Validation Feature", () => {
       });
 
       const weaver = new PromptWeaver("Hello {{name}}", { schema });
-      const result = weaver.formatWithSchema({ name: "World" });
+      const result = weaver.format({ name: "World" });
       expect(result).toBe("Hello World");
     });
 
@@ -374,60 +374,66 @@ describe("Schema Validation Feature", () => {
 
       const weaver = new PromptWeaver("Hello {{name}}", { schema });
       expect(() => {
-        weaver.formatWithSchema({});
+        weaver.format({});
       }).toThrow(SchemaValidationError);
     });
 
-    it("should return null on validation failure with tryFormatWithSchema", () => {
+    it("should work without schema (no validation)", () => {
+      const weaver = new PromptWeaver("Hello {{name}}");
+      const result = weaver.format({ name: "World" });
+      expect(result).toBe("Hello World");
+    });
+
+    it("should handle validation errors with try-catch", () => {
       const schema = createMockSchema(() => ({
         issues: [{ message: "Invalid", path: [] }],
       }));
 
       const weaver = new PromptWeaver("Hello {{name}}", { schema });
-      const result = weaver.tryFormatWithSchema({});
+      let result: string | null = null;
+      try {
+        result = weaver.format({});
+      } catch (error) {
+        if (error instanceof SchemaValidationError) {
+          result = null;
+        } else {
+          throw error;
+        }
+      }
       expect(result).toBeNull();
     });
 
-    it("should re-throw non-validation errors in tryFormatWithSchema", () => {
-      const schema = createMockSchema(() => ({
-        value: {},
-      }));
-
-      const weaver = new PromptWeaver("Hello {{name}}", { schema });
-      // Missing 'name' variable renders empty string, which is valid
-      // Test that validation errors return null, but other errors throw
-      const result = weaver.tryFormatWithSchema({});
-      expect(result).toBe("Hello "); // Empty variable renders as empty string
-
-      // Test with invalid data that fails validation
-      const schema2 = createMockSchema(() => ({
-        issues: [{ message: "Invalid", path: [] }],
-      }));
-      const weaver2 = new PromptWeaver("Hello {{name}}", { schema: schema2 });
-      const result2 = weaver2.tryFormatWithSchema({});
-      expect(result2).toBeNull(); // Validation error returns null
-    });
-
-    it("should throw error when schema not configured", () => {
-      const weaver = new PromptWeaver("Hello {{name}}");
-      expect(() => {
-        weaver.formatWithSchema({});
-      }).toThrow("No schema configured");
-    });
-
-    it("should handle async validation with formatWithSchemaAsync", async () => {
+    it("should validate and render with formatAsync when schema has async validation", async () => {
       const schema = createMockAsyncSchema(async (data) => {
-        await Promise.resolve();
+        await Promise.resolve(); // Simulate async operation
         if (typeof data === "object" && data !== null && "name" in data) {
           return { value: data };
         }
         return {
-          issues: [{ message: "Invalid", path: [] }],
+          issues: [{ message: "Invalid data", path: [] }],
         };
       });
 
       const weaver = new PromptWeaver("Hello {{name}}", { schema });
-      const result = await weaver.formatWithSchemaAsync({ name: "World" });
+      const result = await weaver.formatAsync({ name: "World" });
+      expect(result).toBe("Hello World");
+    });
+
+    it("should throw SchemaValidationError on async validation failure", async () => {
+      const schema = createMockAsyncSchema(async () => {
+        await Promise.resolve();
+        return {
+          issues: [{ message: "Name is required", path: ["name"] }],
+        };
+      });
+
+      const weaver = new PromptWeaver("Hello {{name}}", { schema });
+      await expect(weaver.formatAsync({})).rejects.toThrow(SchemaValidationError);
+    });
+
+    it("should work without schema (no async validation needed)", async () => {
+      const weaver = new PromptWeaver("Hello {{name}}");
+      const result = await weaver.formatAsync({ name: "World" });
       expect(result).toBe("Hello World");
     });
   });

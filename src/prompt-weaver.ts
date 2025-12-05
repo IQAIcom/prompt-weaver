@@ -5,7 +5,6 @@ import {
   isStandardSchema,
   parseWithSchema,
   parseWithSchemaAsync,
-  SchemaValidationError,
   type SchemaValidationResult,
   validateWithSchema,
   validateWithSchemaAsync,
@@ -55,10 +54,21 @@ export interface TemplateMetadata {
 }
 
 /**
+ * Helper type to infer data type from schema.
+ * When a specific schema is provided, infers the input type (what users pass to format()).
+ * When no schema is provided (TSchema is the default StandardSchemaV1), uses Record<string, unknown>.
+ */
+type InferDataFromSchema<TSchema extends StandardSchemaV1> =
+  StandardSchemaV1.InferInput<TSchema> extends Record<string, unknown>
+    ? StandardSchemaV1.InferInput<TSchema>
+    : Record<string, unknown>;
+
+/**
  * Template engine for rendering Prompt Weaver templates.
  * Provides a clean API for building and rendering prompts with a powerful template system.
  *
- * @template TData - Type of the data object expected by the template
+ * @template TSchema - Standard Schema validator type
+ * @template TData - Type of the data object expected by the template (inferred from schema when provided)
  *
  * @example
  * ```ts
@@ -69,20 +79,19 @@ export interface TemplateMetadata {
  *
  * @example
  * ```ts
- * interface MyData {
- *   name: string;
- *   value: number;
- * }
- * const engine = new PromptWeaver<MyData>(template, {
- *   strict: true,
- *   throwOnMissing: true,
+ * import { z } from 'zod';
+ * const schema = z.object({
+ *   name: z.string(),
+ *   age: z.number(),
  * });
- * const output = engine.format({ name: "World", value: 100 });
+ * const engine = new PromptWeaver(template, { schema });
+ * // format() now requires { name: string; age: number }
+ * const output = engine.format({ name: "World", age: 30 });
  * ```
  */
 export class PromptWeaver<
-  TData extends Record<string, unknown> = Record<string, unknown>,
   TSchema extends StandardSchemaV1 = StandardSchemaV1,
+  TData extends Record<string, unknown> = InferDataFromSchema<TSchema>,
 > {
   private readonly template: TemplateDelegate;
   private readonly templateSource: string;
@@ -92,14 +101,72 @@ export class PromptWeaver<
 
   /**
    * Format the template with the provided data.
-   * @param data - Data object to render in the template
-   * @returns Rendered template string
+   * When a schema is provided, this method automatically validates the data against the schema before rendering.
+   * Type inference ensures type safety at compile time, and runtime validation ensures data correctness.
    *
-   * @remarks
-   * For data validation, use {@link formatWithSchema} with a Standard Schema validator.
+   * @param data - Data object to render in the template (type-safe when schema is provided)
+   * @returns Rendered template string
+   * @throws {SchemaValidationError} If schema validation fails (when schema is provided)
+   *
+   * @example
+   * ```ts
+   * import { z } from 'zod';
+   *
+   * const schema = z.object({
+   *   name: z.string(),
+   *   age: z.number(),
+   * });
+   *
+   * const engine = new PromptWeaver(template, { schema });
+   * // format() automatically validates and requires correct types
+   * const output = engine.format({ name: 'John', age: 30 });
+   * ```
    */
   format(data: TData): string {
+    // If schema is provided, validate the data before rendering
+    if (this.schema) {
+      const validatedData = parseWithSchema(this.schema, data);
+      return this.template(validatedData);
+    }
+    // No schema, render directly
     return this.template(data);
+  }
+
+  /**
+   * Format the template with the provided data asynchronously.
+   * When a schema is provided, this method automatically validates the data against the schema before rendering.
+   * Use this method when your schema includes async validations (e.g., Zod refinements with async checks).
+   * Type inference ensures type safety at compile time, and runtime validation ensures data correctness.
+   *
+   * @param data - Data object to render in the template (type-safe when schema is provided)
+   * @returns Promise resolving to rendered template string
+   * @throws {SchemaValidationError} If schema validation fails (when schema is provided)
+   *
+   * @example
+   * ```ts
+   * import { z } from 'zod';
+   *
+   * const schema = z.object({
+   *   email: z.string().email().refine(async (email) => {
+   *     // Async validation (e.g., check if email exists in database)
+   *     return await checkEmailExists(email);
+   *   }),
+   *   name: z.string(),
+   * });
+   *
+   * const engine = new PromptWeaver(template, { schema });
+   * // formatAsync() handles async validation automatically
+   * const output = await engine.formatAsync({ email: 'john@example.com', name: 'John' });
+   * ```
+   */
+  async formatAsync(data: TData): Promise<string> {
+    // If schema is provided, validate the data asynchronously before rendering
+    if (this.schema) {
+      const validatedData = await parseWithSchemaAsync(this.schema, data);
+      return this.template(validatedData);
+    }
+    // No schema, render directly (still return Promise for consistency)
+    return Promise.resolve(this.template(data));
   }
 
   /**
@@ -196,7 +263,7 @@ export class PromptWeaver<
   static composeAndCreate<TSchema extends StandardSchemaV1 = StandardSchemaV1>(
     templateSources: string[],
     options?: PromptWeaverOptions<TSchema>
-  ): PromptWeaver<Record<string, unknown>, TSchema> {
+  ): PromptWeaver<TSchema, InferDataFromSchema<TSchema>> {
     const composed = PromptWeaver.compose(templateSources);
     return new PromptWeaver(composed, options);
   }
@@ -254,13 +321,6 @@ export class PromptWeaver<
   }
 
   /**
-   * Check if a schema is configured for this instance
-   */
-  hasSchema(): boolean {
-    return this.schema !== undefined;
-  }
-
-  /**
    * Ensure schema is configured, throwing an error if not
    * @private
    * @returns The configured schema
@@ -273,14 +333,6 @@ export class PromptWeaver<
       );
     }
     return this.schema;
-  }
-
-  /**
-   * Get the configured schema vendor name
-   * @returns The vendor name or undefined if no schema is configured
-   */
-  getSchemaVendor(): string | undefined {
-    return this.schema?.["~standard"].vendor;
   }
 
   /**
@@ -324,108 +376,5 @@ export class PromptWeaver<
   ): Promise<SchemaValidationResult<StandardSchemaV1.InferOutput<TSchema>>> {
     const schema = this._ensureSchema();
     return validateWithSchemaAsync(schema, data);
-  }
-
-  /**
-   * Format template with schema validation
-   * Validates data against the configured schema before rendering
-   *
-   * @param data - Data to validate and render (type-safe when schema is provided)
-   * @returns Rendered template string
-   * @throws {SchemaValidationError} If schema validation fails
-   * @throws Error if no schema is configured
-   *
-   * @example
-   * ```ts
-   * import { z } from 'zod';
-   *
-   * const schema = z.object({
-   *   name: z.string(),
-   *   count: z.number().positive(),
-   * });
-   *
-   * const engine = new PromptWeaver(template, { schema });
-   *
-   * // This will validate data before rendering with full type inference
-   * const output = engine.formatWithSchema({ name: 'Test', count: 5 });
-   * ```
-   */
-  formatWithSchema(data: StandardSchemaV1.InferInput<TSchema>): string {
-    const schema = this._ensureSchema();
-
-    // Validate and parse data with schema
-    const validatedData = parseWithSchema(schema, data);
-
-    return this.template(validatedData);
-  }
-
-  /**
-   * Format template with schema validation (async)
-   * Validates data against the configured schema before rendering
-   *
-   * @param data - Data to validate and render (type-safe when schema is provided)
-   * @returns Promise resolving to rendered template string
-   * @throws {SchemaValidationError} If schema validation fails
-   * @throws Error if no schema is configured
-   */
-  async formatWithSchemaAsync(data: StandardSchemaV1.InferInput<TSchema>): Promise<string> {
-    const schema = this._ensureSchema();
-
-    // Validate and parse data with schema
-    const validatedData = await parseWithSchemaAsync(schema, data);
-
-    return this.template(validatedData);
-  }
-
-  /**
-   * Try to format template with schema validation, returning null on failure
-   *
-   * @param data - Data to validate and render (type-safe when schema is provided)
-   * @returns Rendered template string or null if validation fails
-   *
-   * @example
-   * ```ts
-   * const output = engine.tryFormatWithSchema(userInput);
-   * if (output === null) {
-   *   console.log('Invalid input');
-   * }
-   * ```
-   */
-  tryFormatWithSchema(data: StandardSchemaV1.InferInput<TSchema>): string | null {
-    try {
-      return this.formatWithSchema(data);
-    } catch (error) {
-      // Only swallow validation errors. Re-throw configuration or other errors.
-      if (error instanceof SchemaValidationError) {
-        return null;
-      }
-      throw error;
-    }
-  }
-
-  /**
-   * Create a type-safe formatter function bound to the schema
-   * Useful for creating reusable formatters with proper type inference
-   *
-   * @returns A function that validates and formats data
-   *
-   * @example
-   * ```ts
-   * import { z } from 'zod';
-   *
-   * const schema = z.object({
-   *   name: z.string(),
-   *   items: z.array(z.string()),
-   * });
-   *
-   * const engine = new PromptWeaver(template, { schema });
-   * const formatter = engine.createSchemaFormatter();
-   *
-   * // formatter is now a typed function
-   * const output = formatter({ name: 'Test', items: ['a', 'b'] });
-   * ```
-   */
-  createSchemaFormatter(): (data: StandardSchemaV1.InferInput<TSchema>) => string {
-    return (data: StandardSchemaV1.InferInput<TSchema>) => this.formatWithSchema(data);
   }
 }

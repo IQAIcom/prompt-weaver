@@ -169,9 +169,9 @@ export class PromptBuilder {
    */
   toPromptWeaver<TSchema extends StandardSchemaV1 = StandardSchemaV1>(
     options?: PromptWeaverOptions<TSchema>
-  ): PromptWeaver<Record<string, unknown>, TSchema> {
+  ) {
     const template = this.build();
-    return new PromptWeaver(template, options);
+    return new PromptWeaver<TSchema>(template, options);
   }
 
   /**
