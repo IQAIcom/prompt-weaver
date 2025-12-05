@@ -68,16 +68,16 @@ export function registerTransformer(
   Handlebars.registerHelper(name, handler);
 }
 
+export { TransformerRegistry } from "../core/plugin-system.js";
+export { registerArithmeticHelpers } from "./arithmetic.js";
+export { registerArrayHelpers } from "./array.js";
+export { registerCollectionHelpers } from "./collection.js";
+export { registerComparisonHelpers } from "./comparison.js";
+export { registerConditionalHelpers } from "./conditional.js";
+export { registerDateHelpers } from "./date.js";
 // Re-export all transformers
 export { formatters } from "./formatters.js";
-export { registerArithmeticHelpers } from "./arithmetic.js";
-export { registerComparisonHelpers } from "./comparison.js";
-export { registerArrayHelpers } from "./array.js";
 export { registerLogicalHelpers } from "./logical.js";
-export { registerStringHelpers } from "./string.js";
-export { registerDateHelpers } from "./date.js";
 export { registerObjectHelpers } from "./object.js";
-export { registerCollectionHelpers } from "./collection.js";
-export { registerConditionalHelpers } from "./conditional.js";
+export { registerStringHelpers } from "./string.js";
 export { registerTemplateHelpers } from "./template.js";
-export { TransformerRegistry } from "../core/plugin-system.js";

@@ -7,7 +7,7 @@ export function registerCollectionHelpers(): void {
   // Array operations
   Handlebars.registerHelper(
     "filter",
-    (array: unknown[], predicate: string, options: Handlebars.HelperOptions) => {
+    (array: unknown[], predicate: string, _options: Handlebars.HelperOptions) => {
       if (!Array.isArray(array)) return [];
       // For simple property checks, we'll use a basic filter
       // More complex predicates would require a more sophisticated implementation
@@ -32,7 +32,7 @@ export function registerCollectionHelpers(): void {
 
   Handlebars.registerHelper(
     "reduce",
-    (array: unknown[], initialValue: unknown, options: Handlebars.HelperOptions) => {
+    (array: unknown[], initialValue: unknown, _options: Handlebars.HelperOptions) => {
       if (!Array.isArray(array)) return initialValue;
       // Basic reduce - for more complex operations, users can use block helpers
       return array.reduce((acc, item) => {
