@@ -298,25 +298,76 @@ Transformers allow you to format data directly within your templates without pre
 
 ### Partials (Reusable Fragments)
 
-Define common pieces (like headers) once and reuse them.
+Define reusable template fragments that can be included anywhere. Perfect for headers, footers, user cards, or any repeated sections.
+
+**Registration:**
 
 ```typescript
-const weaver = new PromptWeaver(mainTemplate, {
+const template = "{{> header}}\n{{content}}\n{{> footer}}";
+const weaver = new PromptWeaver(template, {
   partials: {
-    header: "Role: {{role}}\nTask: {{task}}",
-    footer: "Answer in JSON format."
+    header: "# {{title}}\nRole: {{role}}\n---",
+    footer: "\n---\nPlease respond in JSON format."
   }
+});
+
+// Or register programmatically:
+weaver.setPartial("header", "# {{title}}\n---");
+```
+
+**Context Access & Nesting:**
+
+Partials inherit the parent context and can include other partials:
+
+```typescript
+const template = "{{> pageLayout}}";
+const weaver = new PromptWeaver(template, {
+  partials: {
+    pageLayout: `
+{{> header}}
+{{content}}
+{{> footer}}
+`,
+    header: "# {{title}}\n---",
+    footer: `---
+Generated on {{date formatDate "YYYY-MM-DD"}}`
+  }
+});
+
+const output = weaver.format({
+  title: "My Page",
+  content: "Main content here",
+  date: new Date()
 });
 ```
 
-Usage in template: `{{> header}}` or `{{> footer}}`.
+**Real-World Example:**
 
-You can also register partials programmatically:
+Compose complex prompts from reusable components:
 
 ```typescript
-const weaver = new PromptWeaver(mainTemplate);
-weaver.setPartial("header", "<header>{{title}}</header>");
-weaver.setPartial("footer", "<footer>Footer</footer>");
+const promptTemplate = `
+{{> systemHeader}}
+{{> taskSection}}
+{{> outputFormat}}
+`;
+
+const weaver = new PromptWeaver(promptTemplate, {
+  partials: {
+    systemHeader: `You are {{role}}, an expert in {{domain}}.{{#if companyName}} Working for {{companyName}}.{{/if}}`,
+    taskSection: `
+## Task
+{{taskDescription}}
+{{#if requirements}}
+## Requirements
+{{#each requirements}}
+- {{this}}
+{{/each}}
+{{/if}}
+`,
+    outputFormat: `{{#if jsonOutput}}Please respond in valid JSON format.{{else}}{{outputFormat}}{{/if}}`
+  }
+});
 ```
 
 -----
