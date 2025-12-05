@@ -17,4 +17,3 @@ export function registerLogicalHelpers(): void {
     return values.some((v) => Boolean(v));
   });
 }
-

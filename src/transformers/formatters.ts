@@ -65,4 +65,3 @@ export const formatters: Record<string, (v: unknown) => string> = {
   // JSON stringify
   json: (v) => JSON.stringify(v),
 };
-

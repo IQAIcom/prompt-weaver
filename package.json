@@ -1,5 +1,5 @@
 {
-  "name": "prompt-weaver",
+  "name": "@iqai/prompt-weaver",
   "version": "0.0.0",
   "description": "Template engine for rendering Handlebars templates",
   "type": "module",

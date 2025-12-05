@@ -11,4 +11,3 @@ export function registerArrayHelpers(): void {
     return 0;
   });
 }
-

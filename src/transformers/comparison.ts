@@ -29,4 +29,3 @@ export function registerComparisonHelpers(): void {
     return Number(a) <= Number(b);
   });
 }
-

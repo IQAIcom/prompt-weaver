@@ -27,4 +27,3 @@ export function registerArithmeticHelpers(): void {
     return Number(a) - Number(b);
   });
 }
-
