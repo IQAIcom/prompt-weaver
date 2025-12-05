@@ -347,3 +347,4 @@ Transformers can be chained in Handlebars expressions:
 - [Templating Syntax](../README.md#-templating-syntax-handlebars) - Handlebars syntax guide
 - [Custom Transformers](../README.md#-advanced-usage) - How to create custom transformers
 
+
