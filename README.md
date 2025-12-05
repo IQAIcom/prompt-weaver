@@ -135,7 +135,6 @@ interface PromptWeaverOptions {
     handler: TemplateHelper;
     metadata?: { description?: string; dependencies?: string[]; version?: string };
   }>;
-  helpers?: Record<string, TemplateHelper>; // Additional helpers
   registry?: TransformerRegistry; // Custom transformer registry
   partials?: Record<string, string>; // Partial templates
   schema?: StandardSchemaV1; // Standard Schema validator (Zod, Valibot, ArkType, etc.)

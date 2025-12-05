@@ -27,8 +27,6 @@ export interface PromptWeaverOptions<TSchema extends StandardSchemaV1 = Standard
     handler: TemplateHelper;
     metadata?: { description?: string; dependencies?: string[]; version?: string };
   }>;
-  /** Additional template helpers to register */
-  helpers?: Record<string, TemplateHelper>;
   /** Custom transformer registry (defaults to global) */
   registry?: TransformerRegistry;
   /** Partial templates to register */
@@ -158,13 +156,6 @@ export class PromptWeaver<
     if (options.transformers) {
       for (const transformer of options.transformers) {
         registerTransformer(transformer.name, transformer.handler, transformer.metadata);
-      }
-    }
-
-    // Register additional helpers
-    if (options.helpers) {
-      for (const [name, handler] of Object.entries(options.helpers)) {
-        Handlebars.registerHelper(name, handler);
       }
     }
 
