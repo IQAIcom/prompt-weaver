@@ -12,10 +12,11 @@ A powerful, extensible template engine for building prompts. Prompt Weaver provi
 
 - 🎯 **Extensible Plugin System** - Register custom transformers and helpers
 - 🔧 **Rich Built-in Transformers** - String, date, object, collection, and conditional helpers
-- ✅ **Validation & Type Safety** - Validate templates and data with detailed error messages
+- ✅ **Validation & Type Safety** - Validate templates and data with Standard Schema (Zod, Valibot, ArkType, etc.)
+- 🔷 **Schema-Based Type Inference** - Automatic TypeScript type inference from validation schemas
 - 🏗️ **Fluent Builder API** - Programmatically build prompts with a clean API
 - 📝 **Template Composition** - Compose multiple templates together
-- 🎨 **TypeScript Support** - Full type safety with generics
+- 🎨 **Full TypeScript Support** - Manual types or automatic inference from schemas
 
 ## 📦 Installation
 
@@ -109,21 +110,6 @@ This example demonstrates:
 - 💰 Number formatting
 
 > 💡 **More Examples**: Check out the [Examples](#-examples) section for real-world use cases including code review assistants, data analysis prompts, content generation, and more.
-
-### 🔷 With TypeScript Types
-
-```typescript
-interface UserData {
-  name: string;
-  balance: number;
-}
-
-const weaver = new PromptWeaver<UserData>(template);
-const output = weaver.format({
-  name: "Alice",
-  balance: 1234.56,
-});
-```
 
 ## 🔧 Core API
 
@@ -274,7 +260,7 @@ const weaver = builder.toPromptWeaver();
 const output1 = weaver.format({ userName: "Alice", balance: 1000, isPremium: true });
 const output2 = weaver.format({ userName: "Bob", balance: 500, isPremium: false });
 
-// Step 4: Optional - Validate with schema
+// Step 4: Optional - Validate with schema (TypeScript infers types automatically)
 import { z } from 'zod';
 const schema = z.object({
   userName: z.string(),
@@ -282,10 +268,23 @@ const schema = z.object({
   isPremium: z.boolean(),
 });
 
+// TypeScript automatically infers types from the schema
 const weaverWithSchema = builder.toPromptWeaver({ schema });
+
+// formatWithSchema() is now type-safe - TypeScript knows the exact shape
+const validatedOutput = weaverWithSchema.formatWithSchema({ 
+  userName: "Alice", 
+  balance: 1000, 
+  isPremium: true 
+});
+
+// Or validate separately (also type-safe)
 const validation = weaverWithSchema.validateSchema({ userName: "Alice", balance: 1000, isPremium: true });
 if (!validation.success) {
   console.error("Validation errors:", validation.issues);
+} else {
+  // validation.data is automatically typed based on schema
+  console.log(validation.data.userName);  // ✅ TypeScript knows this is a string
 }
 ```
 
@@ -479,7 +478,9 @@ registry.registerTransformer("customHelper", (value, option1, option2) => {
 const weaver = new PromptWeaver(template, { registry });
 ```
 
-## ✅ Validation
+## ✅ Validation & Type Safety
+
+Prompt Weaver provides comprehensive validation and type safety through Standard Schema integration. When you provide a schema, TypeScript automatically infers types from it, giving you compile-time type safety without manual type definitions.
 
 ### Template Validation
 
@@ -492,15 +493,15 @@ if (!result.valid) {
 }
 ```
 
-### Data Validation
+### Data Validation with Schema Inference
 
-Validate data using Standard Schema validators (Zod, Valibot, ArkType, etc.):
+Validate data using Standard Schema validators (Zod, Valibot, ArkType, etc.). When you provide a schema, TypeScript automatically infers the input and output types:
 
 ```typescript
 import { z } from 'zod';
 import { PromptWeaver } from "@iqai/prompt-weaver";
 
-// Define your schema
+// Define your schema - TypeScript will infer types from this!
 const schema = z.object({
   name: z.string().min(1),
   age: z.number().positive(),
@@ -508,26 +509,39 @@ const schema = z.object({
 });
 
 // Create PromptWeaver with schema
+// TypeScript automatically infers types from the schema
 const weaver = new PromptWeaver(template, { schema });
 
-// Validate data before rendering
+// TypeScript knows the shape of data from the schema
+// formatWithSchema() accepts the inferred input type
+const output = weaver.formatWithSchema({
+  name: "Alice",  // ✅ TypeScript knows this must be a string
+  age: 30,        // ✅ TypeScript knows this must be a positive number
+  email: "alice@example.com"  // ✅ TypeScript knows this is optional string
+});
+
+// Validate data before rendering (also type-safe)
 const result = weaver.validateSchema({ name: "Alice", age: 30 });
 if (result.success) {
-  console.log("Valid data:", result.data);
+  console.log("Valid data:", result.data); // ✅ TypeScript infers the output type
 } else {
   console.error("Validation errors:", result.issues);
 }
 ```
 
-**Format with automatic validation:**
+**Format with automatic validation (type-safe):**
 
 ```typescript
-// This validates and renders in one step
+// This validates and renders in one step with full type inference
+// TypeScript enforces the schema shape at compile time
 // Throws SchemaValidationError if validation fails
-const output = weaver.formatWithSchema({ name: "Alice", age: 30 });
+const output = weaver.formatWithSchema({ 
+  name: "Alice",  // TypeScript enforces: must be string, min length 1
+  age: 30         // TypeScript enforces: must be positive number
+});
 ```
 
-**Try format (returns null on validation failure):**
+**Try format (returns null on validation failure, still type-safe):**
 
 ```typescript
 const output = weaver.tryFormatWithSchema(userInput);
@@ -1123,7 +1137,11 @@ const output = weaver.format({
 
 ## 🔷 TypeScript Support
 
-Full TypeScript support with generics:
+Prompt Weaver provides full TypeScript support with two approaches: manual type definitions or automatic type inference from schemas.
+
+### Manual Type Definitions
+
+Define your data types explicitly using TypeScript interfaces:
 
 ```typescript
 interface PromptData {
@@ -1140,6 +1158,52 @@ const output = weaver.format({
   email: "alice@example.com",
 });
 ```
+
+### Schema-Based Type Inference (Recommended)
+
+When you provide a Standard Schema validator, TypeScript automatically infers types from it. This gives you:
+- ✅ **Single source of truth** - Your schema defines both validation rules and types
+- ✅ **Automatic type inference** - No need to manually define interfaces
+- ✅ **Compile-time safety** - TypeScript enforces schema constraints
+- ✅ **Runtime validation** - Data is validated against the schema
+
+```typescript
+import { z } from 'zod';
+import { PromptWeaver } from "@iqai/prompt-weaver";
+
+// Define schema - TypeScript infers types automatically
+const schema = z.object({
+  name: z.string().min(1),
+  age: z.number().positive(),
+  email: z.string().email().optional(),
+});
+
+// TypeScript automatically infers the input/output types from the schema
+const weaver = new PromptWeaver(template, { schema });
+
+// TypeScript knows the exact shape from the schema
+const output = weaver.formatWithSchema({
+  name: "Alice",  // ✅ TypeScript enforces: string, min length 1
+  age: 30,        // ✅ TypeScript enforces: positive number
+  email: "alice@example.com"  // ✅ TypeScript knows: optional email string
+});
+
+// Type inference works with validation too
+const result = weaver.validateSchema({ name: "Alice", age: 30 });
+if (result.success) {
+  // result.data is automatically typed based on schema output
+  console.log(result.data.name);  // ✅ TypeScript knows this is a string
+  console.log(result.data.age);   // ✅ TypeScript knows this is a number
+}
+```
+
+**Benefits of Schema-Based Inference:**
+- Types stay in sync with validation rules automatically
+- No need to maintain separate TypeScript interfaces
+- Works with any Standard Schema-compatible library (Zod, Valibot, ArkType, etc.)
+- Full type safety for `formatWithSchema()`, `validateSchema()`, and related methods
+
+> 💡 **Best Practice**: Use schema-based type inference for new projects. It reduces boilerplate and ensures types always match your validation rules.
 
 ---
 
