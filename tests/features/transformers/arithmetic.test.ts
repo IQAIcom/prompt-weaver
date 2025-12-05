@@ -16,4 +16,3 @@ describe("Arithmetic Transformers Feature", () => {
     expect(weaver.format({ a: 5, b: 2 })).toBe("2.5");
   });
 });
-

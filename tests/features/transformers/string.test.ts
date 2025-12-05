@@ -37,4 +37,3 @@ describe("String Transformers Feature", () => {
     expect(weaver.format({ text: "test test" })).toBe("TEST TEST");
   });
 });
-

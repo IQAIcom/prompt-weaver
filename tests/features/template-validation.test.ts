@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { extractVariables, TemplateCompilationError, validateTemplate } from "../../src/validation.js";
+import {
+  extractVariables,
+  TemplateCompilationError,
+  validateTemplate,
+} from "../../src/validation.js";
 
 describe("Template Validation Feature", () => {
   describe("Variable Extraction", () => {
@@ -59,4 +63,3 @@ describe("Template Validation Feature", () => {
     });
   });
 });
-

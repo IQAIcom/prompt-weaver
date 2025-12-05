@@ -18,4 +18,3 @@ describe("Conditional Transformers Feature", () => {
     expect(weaver.format({ value: "c" })).toBe("");
   });
 });
-
