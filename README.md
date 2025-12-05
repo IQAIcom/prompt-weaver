@@ -27,7 +27,36 @@ yarn add @iqai/prompt-weaver
 
 ## Quick Start
 
-### Basic Usage
+### Understanding Builder vs Weaver
+
+**PromptWeaver** is a template engine that renders Handlebars templates with data:
+- Use when you have template strings with variables (`{{variable}}`)
+- Best for declarative, template-based rendering
+- Supports all transformers, helpers, and advanced features
+
+**PromptBuilder** is a fluent API for programmatically constructing prompts:
+- Use when building prompts dynamically in code
+- Best for imperative, code-based construction
+- Can convert to PromptWeaver for template rendering
+
+**They work together!** Build programmatically with Builder, then convert to Weaver for rendering:
+
+```typescript
+import { PromptBuilder } from "@iqai/prompt-weaver";
+
+const builder = new PromptBuilder()
+  .section("Introduction", "Hello {{name}}!")
+  .section("Details", "Balance: {{balance currency}}");
+
+// Convert to PromptWeaver and render with data
+const weaver = builder.toPromptWeaver();
+const output = weaver.format({
+  name: "Alice",
+  balance: 1234.56,
+});
+```
+
+### Basic Usage with PromptWeaver
 
 ```typescript
 import { PromptWeaver } from "@iqai/prompt-weaver";
@@ -42,6 +71,27 @@ const output = weaver.format({
 
 console.log(output);
 // "Hello, Alice! Your balance is $1,234.56."
+```
+
+### Basic Usage with PromptBuilder
+
+```typescript
+import { PromptBuilder } from "@iqai/prompt-weaver";
+
+const builder = new PromptBuilder()
+  .heading(1, "User Profile")
+  .section("Personal Information", "Name: {{name}}\nEmail: {{email}}")
+  .list(["Feature 1", "Feature 2", "Feature 3"]);
+
+// Option 1: Get the template string
+const template = builder.build();
+
+// Option 2: Convert directly to PromptWeaver and render
+const weaver = builder.toPromptWeaver();
+const output = weaver.format({
+  name: "Alice",
+  email: "alice@example.com",
+});
 ```
 
 ### With TypeScript Types
@@ -131,6 +181,55 @@ console.log(metadata.partials); // ["header"]
 const composed = PromptWeaver.compose([template1, template2], "\n\n");
 const weaver = new PromptWeaver(composed);
 ```
+
+## Using Builder and Weaver Together
+
+The Builder and Weaver are designed to work seamlessly together. Here's a complete workflow:
+
+### Workflow: Build → Convert → Render
+
+```typescript
+import { PromptBuilder } from "@iqai/prompt-weaver";
+
+// Step 1: Build the template structure programmatically
+const builder = new PromptBuilder()
+  .heading(1, "User Dashboard")
+  .section("Welcome", "Hello {{userName}}!")
+  .section("Account Info", "Your balance is {{balance currency}}")
+  .conditional(isPremium, "⭐ Premium Member", "Upgrade to Premium");
+
+// Step 2: Convert to PromptWeaver for template rendering
+const weaver = builder.toPromptWeaver();
+
+// Step 3: Render with data (can be called multiple times)
+const output1 = weaver.format({ userName: "Alice", balance: 1000, isPremium: true });
+const output2 = weaver.format({ userName: "Bob", balance: 500, isPremium: false });
+
+// Step 4: Validate data before rendering
+const validation = builder.validate({ userName: "Alice" });
+if (!validation.valid) {
+  console.log("Missing variables:", validation.missing);
+}
+```
+
+### Key Integration Points
+
+1. **`builder.toPromptWeaver(options?)`** - Converts the built prompt to a PromptWeaver instance
+2. **`builder.validate(data, options?)`** - Validates data using PromptWeaver internally
+3. **`builder.build()`** - Returns the template string, which can be used with `new PromptWeaver()`
+
+### When to Use Each Approach
+
+| Scenario | Use Builder | Use Weaver | Use Both |
+|----------|-------------|------------|----------|
+| Static template strings | ❌ | ✅ | ❌ |
+| Dynamic prompt construction | ✅ | ❌ | ✅ |
+| Conditional sections | ✅ | ✅* | ✅ |
+| Template rendering with data | ❌ | ✅ | ✅ |
+| Reusable templates | ❌ | ✅ | ✅ |
+| Complex programmatic logic | ✅ | ❌ | ✅ |
+
+*Weaver supports conditionals via Handlebars `{{#if}}` blocks, but Builder's conditional() is better for code-based logic
 
 ## Built-in Transformers
 
@@ -283,16 +382,16 @@ Format values for display:
 
 ## Prompt Builder API
 
-Build prompts programmatically with a fluent API:
+Build prompts programmatically with a fluent API. The Builder is perfect for dynamically constructing prompts in code, then you can convert it to a PromptWeaver instance for rendering with data.
+
+### Basic Example
 
 ```typescript
 import { PromptBuilder } from "@iqai/prompt-weaver";
 
-const prompt = new PromptBuilder()
+const builder = new PromptBuilder()
   .heading(1, "User Profile")
-  .section("Personal Information", () => {
-    return "Name: {{name}}\nEmail: {{email}}";
-  })
+  .section("Personal Information", "Name: {{name}}\nEmail: {{email}}")
   .list(["Item 1", "Item 2", "Item 3"])
   .table(
     ["Name", "Age", "City"],
@@ -302,28 +401,61 @@ const prompt = new PromptBuilder()
     ]
   )
   .conditional(user.isPremium, "Premium features enabled", "Upgrade to premium")
-  .code("function example() { return 'hello'; }", "javascript")
-  .build();
+  .code("function example() { return 'hello'; }", "javascript");
 
-const weaver = prompt.toPromptWeaver();
+// Convert to PromptWeaver and render with data
+const weaver = builder.toPromptWeaver();
+const output = weaver.format({
+  name: "Alice",
+  email: "alice@example.com",
+});
+
+// Or just get the template string
+const templateString = builder.build();
 ```
+
+### When to Use Builder vs Weaver
+
+**Use PromptBuilder when:**
+- Building prompts dynamically based on runtime conditions
+- Constructing prompts programmatically with complex logic
+- You want a fluent, chainable API for prompt construction
+- The prompt structure changes based on user input or application state
+
+**Use PromptWeaver when:**
+- You have static template strings with variables
+- You need to render templates multiple times with different data
+- You want to leverage advanced Handlebars features (helpers, partials, conditionals)
+- You need template validation and metadata extraction
+
+**Use Both Together:**
+- Build the template structure with Builder
+- Convert to Weaver for rendering and validation
+- Best of both worlds: programmatic construction + template rendering
 
 ### Builder Methods
 
-- `.section(title?, content?)` - Add a section
-- `.code(code, language?)` - Add code block
-- `.list(items, ordered?)` - Add list
-- `.table(headers, rows)` - Add table
-- `.conditional(condition, ifTrue, ifFalse?)` - Add conditional content
-- `.loop(items, callback)` - Add loop content
-- `.text(text)` - Add raw text
-- `.separator(char?)` - Add separator
-- `.heading(level, text)` - Add heading
+All methods return `this` for method chaining.
+
+**Content Methods:**
+- `.section(title?, content?)` - Add a section (content can be string or function)
+- `.text(text)` - Add raw text content
+- `.code(code, language?)` - Add code block with optional language
+- `.list(items, ordered?)` - Add list (ordered or unordered)
+- `.table(headers, rows)` - Add markdown table
+- `.heading(level, text)` - Add heading (level 1-6)
 - `.quote(text)` - Add blockquote
+- `.separator(char?)` - Add separator line (default: "---")
+
+**Control Flow Methods:**
+- `.conditional(condition, ifTrue, ifFalse?)` - Add conditional content based on boolean
+- `.loop(items, callback)` - Add content by iterating over items
+
+**Utility Methods:**
 - `.build()` - Build final prompt string
-- `.toPromptWeaver(options?)` - Create PromptWeaver instance
-- `.validate(data, options?)` - Validate data
-- `.clear()` - Clear all content
+- `.toPromptWeaver(options?)` - Convert to PromptWeaver instance for rendering
+- `.validate(data, options?)` - Validate data against template (uses PromptWeaver internally)
+- `.clear()` - Clear all content and start fresh
 
 ## Custom Transformers
 
@@ -754,34 +886,50 @@ const supportPrompt = supportWeaver.format({
 
 ### Programmatic Prompt Building
 
-```typescript
-const builder = new PromptBuilder();
+Build prompts dynamically based on runtime conditions:
 
-const prompt = builder
+```typescript
+import { PromptBuilder } from "@iqai/prompt-weaver";
+
+const builder = new PromptBuilder()
   .heading(1, "AI Code Assistant")
   .section("Role", "You are an expert software engineer specializing in {{language}}.")
-  .section("Task", "{{taskDescription}}")
-  .conditional(includeContext, () => {
-    return builder
-      .heading(2, "Context")
-      .text("Current codebase:")
-      .code(existingCode, "typescript")
-      .text(`\nRelated files: ${relatedFiles.join(", ")}`);
-  })
-  .section("Requirements", () => {
-    return builder
-      .list(requirements)
-      .conditional(hasConstraints, () => {
-        return builder
-          .heading(3, "Constraints")
-          .list(constraints);
-      });
-  })
-  .section("Output Format", "Please provide:\n1. Complete code solution\n2. Brief explanation\n3. Testing recommendations")
-  .build();
+  .section("Task", "{{taskDescription}}");
 
-const weaver = new PromptWeaver(prompt);
+// Conditionally add context section
+if (includeContext) {
+  builder
+    .heading(2, "Context")
+    .text("Current codebase:")
+    .code(existingCode, "typescript")
+    .text(`\nRelated files: ${relatedFiles.join(", ")}`);
+}
+
+// Build requirements section
+builder.section("Requirements", () => {
+  const reqBuilder = new PromptBuilder().list(requirements);
+  if (hasConstraints) {
+    reqBuilder.heading(3, "Constraints").list(constraints);
+  }
+  return reqBuilder.build();
+});
+
+builder.section("Output Format", "Please provide:\n1. Complete code solution\n2. Brief explanation\n3. Testing recommendations");
+
+// Convert to PromptWeaver and render with data
+const weaver = builder.toPromptWeaver();
+const output = weaver.format({
+  language: "TypeScript",
+  taskDescription: "Create a function to calculate Fibonacci numbers",
+  // ... other data
+});
 ```
+
+**Key Benefits:**
+- Build prompts programmatically with full control flow
+- Use conditionals, loops, and dynamic content
+- Convert to PromptWeaver for template rendering with variables
+- Validate data against the built template
 
 ## TypeScript Support
 
