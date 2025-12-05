@@ -670,14 +670,15 @@ try {
 ### Code Review Assistant
 
 ```typescript
+const codeFence = "```";
 const codeReviewTemplate = `
 You are an expert code reviewer specializing in {{language}}.
 
 ## Code to Review
 
-\`\`\`{{language}}
+${codeFence}{{language}}
 {{code}}
-\`\`\`
+${codeFence}
 
 ## Review Criteria
 
@@ -726,7 +727,7 @@ const reviewPrompt = weaver.format({
 ```
 
 **Output:**
-```
+````
 You are an expert code reviewer specializing in TypeScript.
 
 ## Code to Review
@@ -760,7 +761,7 @@ Please structure your review as:
 - **Critical Issues**: List any blocking issues
 - **Suggestions**: Improvement recommendations
 - **Questions**: Clarifications needed
-```
+````
 
 </details>
 
@@ -821,6 +822,39 @@ const analysisPrompt = analysisWeaver.format({
   findingsCount: 5
 });
 ```
+
+**Output:**
+````
+You are a data analyst with expertise in e-commerce.
+
+## Dataset Overview
+
+- **Total Records**: 125,000
+- **Date Range**: 2024-01-01 to 2024-03-31
+- **Key Metrics**: Revenue, Conversion Rate, Customer Lifetime Value
+
+## Data Summary
+
+⚠️ **Note**: This dataset contains 47 outliers that may need special handling.
+
+## Analysis Request
+
+Analyze sales trends and identify factors contributing to revenue growth in Q1 2024.
+
+## Visualization Requirements
+
+Please suggest appropriate visualizations for:
+- Time series
+- Cohort analysis
+- Funnel visualization
+
+## Expected Output Format
+
+1. **Executive Summary**: High-level insights (2-3 sentences)
+2. **Key Findings**: 5 main observations
+3. **Recommendations**: Actionable next steps
+4. **Data Quality Notes**: Any concerns or limitations
+````
 
 </details>
 
@@ -902,6 +936,46 @@ const contentPrompt = contentWeaver.format({
 });
 ```
 
+**Output:**
+````
+You are a professional technical blog post writer with 10 years of experience.
+
+## Writing Assignment
+
+**Topic**: Building Scalable APIs with TypeScript
+**Target Audience**: Senior software engineers
+**Tone**: professional yet approachable
+**Word Count**: 2000 words
+
+## SEO Keywords
+
+- TypeScript
+- API design
+- scalability
+- best practices
+
+## Content Structure
+
+1. Introduction to API scalability challenges
+2. TypeScript patterns for robust APIs
+3. Performance optimization techniques
+4. Real-world case studies
+5. Conclusion and next steps
+
+## Guidelines
+
+- Use code examples to illustrate concepts
+- Include performance benchmarks where relevant
+- Reference industry best practices
+- End with actionable takeaways
+
+Please write engaging, well-researched content that:
+- Captures the reader's attention from the first sentence
+- Provides valuable insights and actionable information
+- Maintains a consistent professional yet approachable tone throughout
+- Includes relevant examples and data points where appropriate
+````
+
 </details>
 
 <details>
@@ -980,6 +1054,47 @@ const supportPrompt = supportWeaver.format({
   ]
 });
 ```
+
+**Output:**
+````
+You are a customer support specialist for TechCorp.
+
+## Customer Information
+
+- **Name**: Sarah Johnson
+- **Account Type**: Business
+- **Member Since**: June 2023
+- ⭐ **Premium Member**
+
+## Issue Details
+
+**Ticket ID**: TC-2024-0847
+**Category**: Billing
+**Priority**: HIGH
+**Reported**: 2 hours ago
+
+**Description**:
+I was charged twice for my subscription renewal. The charge appeared on both my credit card and PayPal account.
+
+## Previous Interactions
+
+This customer has 1 previous ticket:
+- Ticket #TC-2024-0721: Feature request (resolved)
+
+## Recent Order History
+
+- Order #ORD-1234: Pro Plan - Mar 01, 2024 - Completed
+
+## Response Guidelines
+
+1. Acknowledge the customer's concern with empathy
+2. Provide a clear, step-by-step solution
+3. Offer priority escalation if needed
+4. Set clear expectations for resolution timeline
+5. End with a warm, helpful closing
+
+Please draft a professional, helpful response that resolves their issue.
+````
 
 </details>
 
