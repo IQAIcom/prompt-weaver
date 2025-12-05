@@ -16,7 +16,8 @@
     "indentWidth": 2,
     "lineEnding": "lf",
     "lineWidth": 100,
-    "attributePosition": "auto"
+    "attributePosition": "auto",
+    "ignore": ["package.json"]
   },
   "organizeImports": {
     "enabled": true
