@@ -852,7 +852,7 @@ You are a customer support specialist for {{companyName}}.
 {{#if previousTickets}}
 ## Previous Interactions
 
-This customer has {{previousTickets.length}} previous ticket{{pluralize "ticket" previousTickets.length}}:
+This customer has {{previousTickets.length}} previous {{pluralize "ticket" previousTickets.length}}:
 {{#each previousTickets}}
 - Ticket #{{ticketNumber}}: {{summary}} ({{status}})
 {{/each}}
