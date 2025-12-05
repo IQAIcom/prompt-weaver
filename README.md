@@ -54,7 +54,7 @@ You are an AI assistant helping {{userName}} with their {{taskType}}.
 
 {{#if notes}}
 ## Additional Notes
-{{notes ellipsis 200}}
+{{notes ellipsis 100}}
 {{/if}}
 `;
 
@@ -72,7 +72,7 @@ const output = weaver.format({
     "Identify potential risks",
     "Estimate resource requirements"
   ],
-  notes: "This is a high-priority project that requires careful attention to detail and stakeholder communication."
+  notes: "This is a high-priority project that requires careful attention to detail and stakeholder communication. We need to ensure all deliverables are met on time while maintaining quality standards. Regular check-ins with the team will be essential to track progress and address any blockers early."
 });
 
 console.log(output);
@@ -96,7 +96,7 @@ You are an AI assistant helping Alice with their project planning.
 3. Estimate resource requirements
 
 ## Additional Notes
-This is a high-priority project that requires careful attention to detail and stakeholder communication.
+This is a high-priority project that requires careful attention to detail and stakeholder communication. We need to ensure all deliv...
 ```
 
 This example demonstrates:
