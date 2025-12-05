@@ -1055,10 +1055,6 @@ const output = weaver.format({
 });
 ```
 
-## 📄 License
-
-MIT
-
 ---
 
 <div align="center">
