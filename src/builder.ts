@@ -177,18 +177,6 @@ export class PromptBuilder {
    * @param options - Options for PromptWeaver
    * @returns Validation result
    */
-  validate(
-    data: Record<string, unknown>,
-    options?: PromptWeaverOptions
-  ): {
-    valid: boolean;
-    errors: Array<{ message: string; field?: string; value?: unknown }>;
-    missing: string[];
-    extra: string[];
-  } {
-    const weaver = this.toPromptWeaver(options);
-    return weaver.validate(data);
-  }
 
   /**
    * Clear all content
