@@ -7,7 +7,9 @@ describe("Arithmetic Transformers Feature", () => {
   beforeEach(() => {
     // Unregister all arithmetic helpers
     const helpers = ["increment", "add", "multiply", "divide", "subtract"];
-    helpers.forEach((helper) => Handlebars.unregisterHelper(helper));
+    helpers.forEach((helper) => {
+      Handlebars.unregisterHelper(helper);
+    });
     registerArithmeticHelpers();
   });
 

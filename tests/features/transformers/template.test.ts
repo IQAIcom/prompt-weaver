@@ -7,7 +7,9 @@ describe("Template Transformers Feature", () => {
   beforeEach(() => {
     // Unregister all template helpers
     const helpers = ["partial", "include", "block", "yield"];
-    helpers.forEach((helper) => Handlebars.unregisterHelper(helper));
+    helpers.forEach((helper) => {
+      Handlebars.unregisterHelper(helper);
+    });
     registerTemplateHelpers();
   });
 

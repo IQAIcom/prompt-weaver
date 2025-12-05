@@ -19,7 +19,9 @@ describe("Object Transformers Feature", () => {
       "isEmpty",
       "isNotEmpty",
     ];
-    helpers.forEach((helper) => Handlebars.unregisterHelper(helper));
+    helpers.forEach((helper) => {
+      Handlebars.unregisterHelper(helper);
+    });
     registerObjectHelpers();
   });
 

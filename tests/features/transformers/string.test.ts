@@ -27,7 +27,9 @@ describe("String Transformers Feature", () => {
       "singularize",
       "ellipsis",
     ];
-    helpers.forEach((helper) => Handlebars.unregisterHelper(helper));
+    helpers.forEach((helper) => {
+      Handlebars.unregisterHelper(helper);
+    });
     registerStringHelpers();
   });
 

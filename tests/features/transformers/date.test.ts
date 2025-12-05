@@ -23,7 +23,9 @@ describe("Date Transformers Feature", () => {
       "timestamp",
       "unixTimestamp",
     ];
-    helpers.forEach((helper) => Handlebars.unregisterHelper(helper));
+    helpers.forEach((helper) => {
+      Handlebars.unregisterHelper(helper);
+    });
     registerDateHelpers();
   });
 
@@ -287,7 +289,7 @@ describe("Date Transformers Feature", () => {
       const weaver = new PromptWeaver(template);
       const date = new Date("2024-01-15T10:00:00Z");
       const result = weaver.format({ date });
-      const minutes = parseInt(result);
+      const minutes = parseInt(result, 10);
       expect(minutes).toBeGreaterThanOrEqual(0);
       expect(minutes).toBeLessThanOrEqual(59);
     });
@@ -297,7 +299,7 @@ describe("Date Transformers Feature", () => {
       const weaver = new PromptWeaver(template);
       const date = new Date("2024-01-15T10:30:00Z");
       const result = weaver.format({ date });
-      const minutes = parseInt(result);
+      const minutes = parseInt(result, 10);
       expect(minutes).toBeGreaterThanOrEqual(0);
       expect(minutes).toBeLessThanOrEqual(59);
     });
@@ -322,7 +324,7 @@ describe("Date Transformers Feature", () => {
       const weaver = new PromptWeaver(template);
       const date = new Date("2024-01-15T00:00:00Z");
       const result = weaver.format({ date });
-      expect(parseInt(result)).toBeGreaterThan(0);
+      expect(parseInt(result, 10)).toBeGreaterThan(0);
     });
 
     it("should convert date to unix timestamp", () => {
@@ -330,7 +332,7 @@ describe("Date Transformers Feature", () => {
       const weaver = new PromptWeaver(template);
       const date = new Date("2024-01-15T00:00:00Z");
       const result = weaver.format({ date });
-      const unix = parseInt(result);
+      const unix = parseInt(result, 10);
       expect(unix).toBeGreaterThan(0);
       // Unix timestamp should be roughly 10 digits for dates around 2024
       expect(unix.toString().length).toBeGreaterThanOrEqual(9);
