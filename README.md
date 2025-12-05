@@ -1,6 +1,10 @@
-# @iqai/prompt-weaver
+<div align="center">
+
+# Prompt Weaver - Craft Powerful Prompts with Ease
 
 A powerful, extensible template engine for building prompts with Handlebars. Prompt Weaver provides a comprehensive set of transformers, validation utilities, and a fluent API for programmatic prompt construction.
+
+</div>
 
 ## Features
 
@@ -449,37 +453,302 @@ try {
 
 ## Examples
 
-### Trading Prompt Example
+### Code Review Assistant
 
 ```typescript
-const template = `
-# Trading Analysis
+const codeReviewTemplate = `
+You are an expert code reviewer specializing in {{language}}.
 
-## Market Overview
-Current price: {{price price}}
-24h change: {{change signedPercent}}
+## Code to Review
 
-## Portfolio
-{{#each positions}}
-- {{symbol}}: {{quantity}} @ {{avgPrice price}}
-  P&L: {{pnl signedCurrency}}
+\`\`\`{{language}}
+{{code}}
+\`\`\`
+
+## Review Criteria
+
+{{#each criteria}}
+- {{this}}
 {{/each}}
 
-## Summary
-Total value: {{totalValue currency}}
-Total P&L: {{totalPnL signedCurrency}}
+## Context
+
+- Repository: {{repoName}}
+- Pull Request: #{{prNumber}}
+- Author: {{authorName}}
+- Files Changed: {{filesChanged}}
+
+Please provide a thorough code review focusing on:
+1. Code quality and best practices
+2. Potential bugs or security issues
+3. Performance optimizations
+4. Test coverage recommendations
+
+{{#if includeExamples}}
+## Example Review Format
+
+Please structure your review as:
+- **Critical Issues**: List any blocking issues
+- **Suggestions**: Improvement recommendations
+- **Questions**: Clarifications needed
+{{/if}}
 `;
 
-const weaver = new PromptWeaver(template);
-const output = weaver.format({
-  price: 0.1234,
-  change: 5.67,
-  positions: [
-    { symbol: "BTC", quantity: 1.5, avgPrice: 0.12, pnl: 500 },
-    { symbol: "ETH", quantity: 10, avgPrice: 0.05, pnl: -200 },
+const weaver = new PromptWeaver(codeReviewTemplate);
+const reviewPrompt = weaver.format({
+  language: "TypeScript",
+  code: "function calculateTotal(items: Item[]) { return items.reduce((sum, item) => sum + item.price, 0); }",
+  criteria: [
+    "Type safety and error handling",
+    "Performance and scalability",
+    "Code readability and maintainability"
   ],
-  totalValue: 50000,
-  totalPnL: 300,
+  repoName: "my-app",
+  prNumber: 42,
+  authorName: "John Doe",
+  filesChanged: 3,
+  includeExamples: true
+});
+```
+
+**Output:**
+```
+You are an expert code reviewer specializing in TypeScript.
+
+## Code to Review
+
+```TypeScript
+function calculateTotal(items: Item[]) { return items.reduce((sum, item) => sum + item.price, 0); }
+```
+
+## Review Criteria
+
+- Type safety and error handling
+- Performance and scalability
+- Code readability and maintainability
+
+## Context
+
+- Repository: my-app
+- Pull Request: #42
+- Author: John Doe
+- Files Changed: 3
+
+Please provide a thorough code review focusing on:
+1. Code quality and best practices
+2. Potential bugs or security issues
+3. Performance optimizations
+4. Test coverage recommendations
+
+## Example Review Format
+
+Please structure your review as:
+- **Critical Issues**: List any blocking issues
+- **Suggestions**: Improvement recommendations
+- **Questions**: Clarifications needed
+```
+
+### Data Analysis Prompt
+
+```typescript
+const analysisTemplate = `
+You are a data analyst with expertise in {{domain}}.
+
+## Dataset Overview
+
+- **Total Records**: {{totalRecords integer}}
+- **Date Range**: {{startDate formatDate "YYYY-MM-DD"}} to {{endDate formatDate "YYYY-MM-DD"}}
+- **Key Metrics**: {{#each metrics}}{{this}}{{#unless @last}}, {{/unless}}{{/each}}
+
+## Data Summary
+
+{{#if hasOutliers}}
+⚠️ **Note**: This dataset contains {{outlierCount}} outliers that may need special handling.
+{{/if}}
+
+## Analysis Request
+
+{{request}}
+
+{{#if includeVisualizations}}
+## Visualization Requirements
+
+Please suggest appropriate visualizations for:
+{{#each visualizationTypes}}
+- {{this}}
+{{/each}}
+{{/if}}
+
+## Expected Output Format
+
+1. **Executive Summary**: High-level insights (2-3 sentences)
+2. **Key Findings**: {{findingsCount}} main observations
+3. **Recommendations**: Actionable next steps
+4. **Data Quality Notes**: Any concerns or limitations
+`;
+
+const analysisWeaver = new PromptWeaver(analysisTemplate);
+const analysisPrompt = analysisWeaver.format({
+  domain: "e-commerce",
+  totalRecords: 125000,
+  startDate: new Date("2024-01-01"),
+  endDate: new Date("2024-03-31"),
+  metrics: ["Revenue", "Conversion Rate", "Customer Lifetime Value"],
+  hasOutliers: true,
+  outlierCount: 47,
+  request: "Analyze sales trends and identify factors contributing to revenue growth in Q1 2024.",
+  includeVisualizations: true,
+  visualizationTypes: ["Time series", "Cohort analysis", "Funnel visualization"],
+  findingsCount: 5
+});
+```
+
+### Content Generation Prompt
+
+```typescript
+const contentTemplate = `
+You are a professional {{contentType}} writer with {{yearsExperience}} years of experience.
+
+## Writing Assignment
+
+**Topic**: {{topic}}
+**Target Audience**: {{audience}}
+**Tone**: {{tone}}
+**Word Count**: {{targetWordCount}} words
+
+{{#if keywords}}
+## SEO Keywords
+
+{{#each keywords}}
+- {{this}}
+{{/each}}
+{{/if}}
+
+## Content Structure
+
+{{#each sections}}
+{{increment @index}}. {{this}}
+{{/each}}
+
+## Guidelines
+
+{{#each guidelines}}
+- {{this}}
+{{/each}}
+
+{{#if includeExamples}}
+## Reference Examples
+
+{{#each examples}}
+### Example {{increment @index}}
+{{this}}
+{{/each}}
+{{/if}}
+
+Please write engaging, well-researched content that:
+- Captures the reader's attention from the first sentence
+- Provides valuable insights and actionable information
+- Maintains a consistent {{tone}} tone throughout
+- Includes relevant examples and data points where appropriate
+`;
+
+const contentWeaver = new PromptWeaver(contentTemplate);
+const contentPrompt = contentWeaver.format({
+  contentType: "technical blog post",
+  yearsExperience: 10,
+  topic: "Building Scalable APIs with TypeScript",
+  audience: "Senior software engineers",
+  tone: "professional yet approachable",
+  targetWordCount: 2000,
+  keywords: ["TypeScript", "API design", "scalability", "best practices"],
+  sections: [
+    "Introduction to API scalability challenges",
+    "TypeScript patterns for robust APIs",
+    "Performance optimization techniques",
+    "Real-world case studies",
+    "Conclusion and next steps"
+  ],
+  guidelines: [
+    "Use code examples to illustrate concepts",
+    "Include performance benchmarks where relevant",
+    "Reference industry best practices",
+    "End with actionable takeaways"
+  ],
+  includeExamples: false
+});
+```
+
+### Customer Support Prompt
+
+```typescript
+const supportTemplate = `
+You are a customer support specialist for {{companyName}}.
+
+## Customer Information
+
+- **Name**: {{customerName}}
+- **Account Type**: {{accountType}}
+- **Member Since**: {{memberSince formatDate "MMMM YYYY"}}
+{{#if isPremium}}
+- ⭐ **Premium Member**
+{{/if}}
+
+## Issue Details
+
+**Ticket ID**: {{ticketId}}
+**Category**: {{category}}
+**Priority**: {{priority upper}}
+**Reported**: {{reportedAt relativeTime}}
+
+**Description**:
+{{issueDescription}}
+
+{{#if previousTickets}}
+## Previous Interactions
+
+This customer has {{previousTickets.length}} previous ticket{{pluralize "ticket" previousTickets.length}}:
+{{#each previousTickets}}
+- Ticket #{{ticketNumber}}: {{summary}} ({{status}})
+{{/each}}
+{{/if}}
+
+{{#if orderHistory}}
+## Recent Order History
+
+{{#each orderHistory}}
+- Order #{{orderNumber}}: {{productName}} - {{orderDate formatDate "MMM DD, YYYY"}} - {{status capitalize}}
+{{/each}}
+{{/if}}
+
+## Response Guidelines
+
+1. Acknowledge the customer's concern with empathy
+2. Provide a clear, step-by-step solution
+3. {{#if isPremium}}Offer priority escalation if needed{{else}}Suggest self-service options where appropriate{{/if}}
+4. Set clear expectations for resolution timeline
+5. End with a warm, helpful closing
+
+Please draft a professional, helpful response that resolves their issue.
+`;
+
+const supportWeaver = new PromptWeaver(supportTemplate);
+const supportPrompt = supportWeaver.format({
+  companyName: "TechCorp",
+  customerName: "Sarah Johnson",
+  accountType: "Business",
+  memberSince: new Date("2023-06-15"),
+  isPremium: true,
+  ticketId: "TC-2024-0847",
+  category: "Billing",
+  priority: "high",
+  reportedAt: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 hours ago
+  issueDescription: "I was charged twice for my subscription renewal. The charge appeared on both my credit card and PayPal account.",
+  previousTickets: [
+    { ticketNumber: "TC-2024-0721", summary: "Feature request", status: "resolved" }
+  ],
+  orderHistory: [
+    { orderNumber: "ORD-1234", productName: "Pro Plan", orderDate: new Date("2024-03-01"), status: "completed" }
+  ]
 });
 ```
 
@@ -488,16 +757,30 @@ const output = weaver.format({
 ```typescript
 const builder = new PromptBuilder();
 
-builder
-  .heading(1, "AI Assistant Prompt")
-  .section("Context", "You are a helpful assistant.")
-  .section("Instructions", () => {
-    return `1. Be polite\n2. Be concise\n3. Use examples`;
+const prompt = builder
+  .heading(1, "AI Code Assistant")
+  .section("Role", "You are an expert software engineer specializing in {{language}}.")
+  .section("Task", "{{taskDescription}}")
+  .conditional(includeContext, () => {
+    return builder
+      .heading(2, "Context")
+      .text("Current codebase:")
+      .code(existingCode, "typescript")
+      .text(`\nRelated files: ${relatedFiles.join(", ")}`);
   })
-  .conditional(includeExamples, () => {
-    return builder.code(exampleCode, "typescript");
+  .section("Requirements", () => {
+    return builder
+      .list(requirements)
+      .conditional(hasConstraints, () => {
+        return builder
+          .heading(3, "Constraints")
+          .list(constraints);
+      });
   })
+  .section("Output Format", "Please provide:\n1. Complete code solution\n2. Brief explanation\n3. Testing recommendations")
   .build();
+
+const weaver = new PromptWeaver(prompt);
 ```
 
 ## TypeScript Support
