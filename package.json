@@ -1,6 +1,6 @@
 {
   "name": "@iqai/prompt-weaver",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "A powerful template engine for building and rendering prompts with an extensible transformer system",
   "type": "module",
   "publishConfig": {
