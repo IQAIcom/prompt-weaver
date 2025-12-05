@@ -76,7 +76,7 @@ export class TemplateCompilationError extends Error {
 }
 
 /**
- * Extract variable names from a Handlebars template
+ * Extract variable names from a template
  * @param templateSource - The template source string
  * @returns Set of variable names found in the template
  */

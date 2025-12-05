@@ -15,7 +15,7 @@ import { registerTemplateHelpers } from "./template.js";
 let helpersRegistered = false;
 
 /**
- * Register all custom Handlebars helpers.
+ * Register all custom template helpers.
  * This method registers formatters, arithmetic, comparison, array, logical,
  * string, date, object, collection, conditional, and template helpers.
  */
@@ -24,7 +24,7 @@ export function registerHandlebarsHelpers(): void {
     return;
   }
 
-  // Register each formatter as a Handlebars helper
+  // Register each formatter as a template helper
   for (const [name, formatter] of Object.entries(formatters)) {
     Handlebars.registerHelper(name, formatter);
   }
@@ -64,7 +64,7 @@ export function registerTransformer(
 ): void {
   const registry = TransformerRegistry.getGlobal();
   registry.registerTransformer(name, handler, metadata);
-  // Immediately register with Handlebars
+  // Immediately register the transformer
   Handlebars.registerHelper(name, handler);
 }
 

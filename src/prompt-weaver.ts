@@ -1,5 +1,5 @@
 import Handlebars, { type TemplateDelegate } from "handlebars";
-import type { HandlebarsHelper, TransformerRegistry } from "./core/plugin-system.js";
+import type { TemplateHelper, TransformerRegistry } from "./core/plugin-system.js";
 import {
   getGlobalRegistry,
   registerHandlebarsHelpers,
@@ -19,15 +19,15 @@ export interface PromptWeaverOptions {
   /** Custom transformers to register */
   transformers?: Array<{
     name: string;
-    handler: HandlebarsHelper;
+    handler: TemplateHelper;
     metadata?: { description?: string; dependencies?: string[]; version?: string };
   }>;
   /** Enable strict mode (warn about extra variables) */
   strict?: boolean;
   /** Throw error on missing required variables */
   throwOnMissing?: boolean;
-  /** Additional Handlebars helpers to register */
-  helpers?: Record<string, HandlebarsHelper>;
+  /** Additional template helpers to register */
+  helpers?: Record<string, TemplateHelper>;
   /** Custom transformer registry (defaults to global) */
   registry?: TransformerRegistry;
   /** Partial templates to register */
@@ -47,8 +47,8 @@ export interface TemplateMetadata {
 }
 
 /**
- * Template engine for rendering Handlebars templates.
- * Provides a clean API that hides Handlebars implementation details.
+ * Template engine for rendering Prompt Weaver templates.
+ * Provides a clean API for building and rendering prompts with a powerful template system.
  *
  * @template TData - Type of the data object expected by the template
  *
@@ -158,10 +158,10 @@ export class PromptWeaver<TData extends Record<string, unknown> = Record<string,
   }
 
   /**
-   * Compile a Handlebars template from source string.
-   * This method ensures helpers are registered and returns a compiled Handlebars template.
-   * @param templateSource - The Handlebars template source code as a string
-   * @returns A compiled Handlebars template function
+   * Compile a template from source string.
+   * This method ensures helpers are registered and returns a compiled template function.
+   * @param templateSource - The template source code as a string
+   * @returns A compiled template function
    */
   private compileHandlebarsTemplate(templateSource: string): TemplateDelegate {
     // Compile the template

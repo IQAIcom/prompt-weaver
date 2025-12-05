@@ -1,7 +1,7 @@
 {
   "name": "@iqai/prompt-weaver",
   "version": "0.0.0",
-  "description": "Template engine for rendering Handlebars templates",
+  "description": "A powerful template engine for building and rendering prompts with an extensible transformer system",
   "type": "module",
   "packageManager": "pnpm@9.0.0",
   "main": "./dist/index.js",
@@ -26,7 +26,7 @@
     "version": "changeset version",
     "release": "pnpm run build && changeset publish"
   },
-  "keywords": ["handlebars", "template", "engine", "prompt", "weaver"],
+  "keywords": ["template", "engine", "prompt", "weaver", "transformer", "ai", "llm"],
   "author": "",
   "license": "MIT",
   "dependencies": {

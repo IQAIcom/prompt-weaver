@@ -24,4 +24,4 @@ export {
   ValidationError,
   TemplateCompilationError,
 } from "./validation.js";
-export type { TransformerConfig, HandlebarsHelper } from "./core/plugin-system.js";
+export type { TransformerConfig, TemplateHelper } from "./core/plugin-system.js";

@@ -2,7 +2,7 @@
 
 # Prompt Weaver - Craft Powerful Prompts with Ease
 
-A powerful, extensible template engine for building prompts with Handlebars. Prompt Weaver provides a comprehensive set of transformers, validation utilities, and a fluent API for programmatic prompt construction.
+A powerful, extensible template engine for building prompts. Prompt Weaver provides a comprehensive set of transformers, validation utilities, and a fluent API for programmatic prompt construction.
 
 </div>
 
@@ -63,7 +63,7 @@ const output = weaver.format({
 
 ### PromptWeaver Class
 
-The main class for rendering Handlebars templates.
+The main class for rendering Prompt Weaver templates.
 
 #### Constructor
 
@@ -80,12 +80,12 @@ new PromptWeaver(templateSource, options?)
 interface PromptWeaverOptions {
   transformers?: Array<{
     name: string;
-    handler: HandlebarsHelper;
+    handler: TemplateHelper;
     metadata?: { description?: string; dependencies?: string[]; version?: string };
   }>;
   strict?: boolean; // Warn about extra variables
   throwOnMissing?: boolean; // Throw error on missing required variables
-  helpers?: Record<string, HandlebarsHelper>; // Additional helpers
+  helpers?: Record<string, TemplateHelper>; // Additional helpers
   registry?: TransformerRegistry; // Custom transformer registry
   partials?: Record<string, string>; // Partial templates
 }

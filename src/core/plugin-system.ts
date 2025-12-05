@@ -1,9 +1,10 @@
 import type Handlebars from "handlebars";
 
 /**
- * Type definition for a Handlebars helper function
+ * Type definition for a template helper function.
+ * This is the public-facing type that hides the underlying Handlebars implementation.
  */
-export type HandlebarsHelper = Handlebars.HelperDelegate;
+export type TemplateHelper = Handlebars.HelperDelegate;
 
 /**
  * Configuration for a transformer plugin
@@ -12,7 +13,7 @@ export interface TransformerConfig {
   /** Name of the transformer */
   name: string;
   /** The helper function to register */
-  handler: HandlebarsHelper;
+  handler: TemplateHelper;
   /** Optional metadata about the transformer */
   metadata?: {
     description?: string;
@@ -22,7 +23,7 @@ export interface TransformerConfig {
 }
 
 /**
- * Registry for managing custom transformers and Handlebars helpers.
+ * Registry for managing custom transformers and template helpers.
  * Supports both global and scoped (per-instance) transformer registration.
  */
 export class TransformerRegistry {
@@ -55,7 +56,7 @@ export class TransformerRegistry {
    */
   registerTransformer(
     name: string,
-    handler: HandlebarsHelper,
+    handler: TemplateHelper,
     metadata?: TransformerConfig["metadata"]
   ): void {
     // Note: Transformer overwriting is allowed, previous registration will be replaced
@@ -72,7 +73,7 @@ export class TransformerRegistry {
    * Register multiple transformers at once
    * @param transformers - Record of name -> handler mappings
    */
-  registerTransformers(transformers: Record<string, HandlebarsHelper>): void {
+  registerTransformers(transformers: Record<string, TemplateHelper>): void {
     for (const [name, handler] of Object.entries(transformers)) {
       this.registerTransformer(name, handler);
     }
