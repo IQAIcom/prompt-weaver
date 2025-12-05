@@ -1,6 +1,10 @@
 export { PromptBuilder } from "./builder.js";
 export type { TemplateHelper, TransformerConfig } from "./core/plugin-system.js";
-export { PromptWeaver, type PromptWeaverOptions, type TemplateMetadata } from "./prompt-weaver.js";
+export {
+  PromptWeaver,
+  type PromptWeaverOptions,
+  type TemplateMetadata,
+} from "./prompt-weaver.js";
 // Standard Schema validation exports
 export {
   SchemaValidationError,

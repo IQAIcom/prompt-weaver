@@ -198,8 +198,8 @@ const schema = z.object({
 // TypeScript automatically infers types from the schema
 const weaverWithSchema = builder.toPromptWeaver({ schema });
 
-// formatWithSchema() is now type-safe - TypeScript knows the exact shape
-const validatedOutput = weaverWithSchema.formatWithSchema({ 
+// format() automatically validates when schema is provided - TypeScript knows the exact shape
+const validatedOutput = weaverWithSchema.format({ 
   userName: "Alice", 
   balance: 1000, 
   isPremium: true 
@@ -478,7 +478,7 @@ This is where Prompt Weaver shines. By integrating **Standard Schema** (Zod, Val
 
 ### The "Magic" of Inference
 
-You don't need to manually define interfaces. Just pass a schema.
+You don't need to manually define interfaces. Just pass a schema, and `format()` automatically validates and enforces type safety.
 
 ```typescript
 import { z } from 'zod';
@@ -494,38 +494,57 @@ const schema = z.object({
 // 2. Pass schema to Weaver
 const weaver = new PromptWeaver(template, { schema });
 
-// 3. Type-Safe Formatting
+// 3. Type-Safe Formatting with Automatic Validation
 // TypeScript will now ERROR if you miss 'username' or if 'age' is a string!
-const output = weaver.formatWithSchema({
+// format() automatically validates the data against the schema at runtime
+const output = weaver.format({
   username: "Alice", 
   age: 30,
   // email is optional, so we can omit it safely
 });
+
+// ❌ This will give a TypeScript error AND throw at runtime
+// weaver.format({}); // Missing required fields
 ```
 
 ### Validation Methods
 
-- `weaver.formatWithSchema(data)`: Validates, renders, and throws error if invalid.
-- `weaver.tryFormatWithSchema(data)`: Returns `null` on failure instead of throwing.
-- `weaver.validateSchema(data)`: Just runs validation, returning a success/failure object.
+- `weaver.format(data)`: **Automatically validates** when a schema is provided, renders, and throws error if invalid. Type-safe!
+- `weaver.formatAsync(data)`: **Automatically validates** asynchronously when a schema is provided (use for schemas with async refinements/transforms). Returns a Promise.
+- `weaver.validateSchema(data)`: Just runs validation, returning a success/failure object (doesn't render).
 
 **Example:**
 
 ```typescript
-// Validate data before rendering (also type-safe)
+import { SchemaValidationError } from "@iqai/prompt-weaver";
+
+// format() automatically validates when schema is provided
+try {
+  const output = weaver.format({ username: "Alice", age: 30 });
+  console.log("Rendered:", output);
+} catch (error) {
+  if (error instanceof SchemaValidationError) {
+    console.error("Validation errors:", error.issues);
+  }
+}
+
+// formatAsync() for schemas with async validation
+const schema = z.object({
+  email: z.string().email().refine(async (email) => {
+    return await checkEmailExists(email);
+  }),
+  name: z.string(),
+});
+
+const weaver = new PromptWeaver(template, { schema });
+const output = await weaver.formatAsync({ email: "alice@example.com", name: "Alice" });
+
+// Or validate separately without rendering
 const result = weaver.validateSchema({ username: "Alice", age: 30 });
 if (result.success) {
   console.log("Valid data:", result.data); // ✅ TypeScript infers the output type
 } else {
   console.error("Validation errors:", result.issues);
-}
-
-// Try format (returns null on validation failure, still type-safe)
-const output = weaver.tryFormatWithSchema(userInput);
-if (output === null) {
-  console.log("Invalid input");
-} else {
-  console.log("Rendered:", output);
 }
 ```
 
@@ -533,7 +552,6 @@ if (output === null) {
 
 ```typescript
 const result = await weaver.validateSchemaAsync({ username: "Alice", age: 30 });
-const output = await weaver.formatWithSchemaAsync({ username: "Alice", age: 30 });
 ```
 
 > [!NOTE]
@@ -643,10 +661,9 @@ interface PromptWeaverOptions {
 }
 
 // Methods
-weaver.format(data)                    // Render the template with data
+weaver.format(data)                    // Render the template with data (automatically validates if schema provided)
+weaver.formatAsync(data)               // Render asynchronously (use for schemas with async validation)
 weaver.validateSchema(data)            // Validate data against schema (requires schema option)
-weaver.formatWithSchema(data)          // Format with automatic validation (throws on failure)
-weaver.tryFormatWithSchema(data)       // Format with validation (returns null on failure)
 weaver.extractVariables()              // Get required variables from template
 weaver.setPartial(name, templateSource) // Register a partial template
 weaver.getMetadata()                   // Get template metadata
@@ -955,7 +972,8 @@ const schema = z.object({
 
 try {
   const weaver = new PromptWeaver(template, { schema });
-  const output = weaver.formatWithSchema({ name: "Alice", age: 30 });
+  // format() automatically validates when schema is provided
+  const output = weaver.format({ name: "Alice", age: 30 });
 } catch (error) {
   if (error instanceof SchemaValidationError) {
     console.error("Validation failed:", error.issues);
