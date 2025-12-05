@@ -19,9 +19,14 @@ export {
 } from "./transformers/index.js";
 export {
   extractVariables,
-  validateData,
   validateTemplate,
-  ValidationError,
   TemplateCompilationError,
 } from "./validation.js";
 export type { TransformerConfig, TemplateHelper } from "./core/plugin-system.js";
+
+// Standard Schema validation exports
+export {
+  SchemaValidationError,
+  type SchemaValidationResult,
+  type StandardSchemaV1,
+} from "./schema-validation.js";

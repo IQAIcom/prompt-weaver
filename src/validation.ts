@@ -1,46 +1,6 @@
 import Handlebars from "handlebars";
 
 /**
- * Validation error with context information
- */
-export class ValidationError extends Error {
-  constructor(
-    message: string,
-    public readonly field?: string,
-    public readonly value?: unknown,
-    public readonly lineNumber?: number,
-    public readonly columnNumber?: number
-  ) {
-    super(message);
-    this.name = "ValidationError";
-    // Maintain proper stack trace for where our error was thrown (only available on V8)
-    // biome-ignore lint/suspicious/noExplicitAny: Error.captureStackTrace is V8-specific and not in types
-    const ErrorConstructor = Error as any;
-    if (typeof ErrorConstructor.captureStackTrace === "function") {
-      ErrorConstructor.captureStackTrace(this, ValidationError);
-    }
-  }
-
-  /**
-   * Get a formatted error message with context
-   */
-  getFormattedMessage(): string {
-    let msg = this.message;
-    if (this.field) {
-      msg += ` (field: ${this.field})`;
-    }
-    if (this.lineNumber !== undefined) {
-      msg += ` (line: ${this.lineNumber}`;
-      if (this.columnNumber !== undefined) {
-        msg += `, column: ${this.columnNumber}`;
-      }
-      msg += ")";
-    }
-    return msg;
-  }
-}
-
-/**
  * Template compilation error with line number context
  */
 export class TemplateCompilationError extends Error {
@@ -106,90 +66,6 @@ export function extractVariables(templateSource: string): Set<string> {
   }
 
   return variables;
-}
-
-/**
- * Find the line number where a variable is used in the template
- */
-function findVariableLine(templateSource: string, variable: string): number | undefined {
-  const lines = templateSource.split("\n");
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
-    // Check for variable usage patterns
-    if (
-      line.includes(`{{${variable}`) ||
-      line.includes(`{{ ${variable}`) ||
-      line.includes(`{{${variable}.`) ||
-      line.includes(`{{ ${variable}.`)
-    ) {
-      return i + 1; // 1-based line numbers
-    }
-  }
-  return undefined;
-}
-
-/**
- * Validate data against template requirements
- * @param templateSource - The template source string
- * @param data - The data object to validate
- * @param options - Validation options
- * @returns Validation result with errors if any
- */
-export function validateData(
-  templateSource: string,
-  data: Record<string, unknown>,
-  options: {
-    strict?: boolean;
-    throwOnMissing?: boolean;
-  } = {}
-): {
-  valid: boolean;
-  errors: ValidationError[];
-  missing: string[];
-  extra: string[];
-} {
-  const { strict = false, throwOnMissing = false } = options;
-  const errors: ValidationError[] = [];
-  const requiredVars = extractVariables(templateSource);
-  const dataKeys = new Set(Object.keys(data));
-  const missing: string[] = [];
-  const extra: string[] = [];
-
-  // Check for missing required variables
-  for (const variable of requiredVars) {
-    if (!(variable in data)) {
-      missing.push(variable);
-      if (throwOnMissing) {
-        const lineNumber = findVariableLine(templateSource, variable);
-        errors.push(
-          new ValidationError(
-            `Missing required variable: ${variable}`,
-            variable,
-            undefined,
-            lineNumber
-          )
-        );
-      }
-    }
-  }
-
-  // Check for extra variables (if strict mode)
-  if (strict) {
-    for (const key of dataKeys) {
-      if (!requiredVars.has(key)) {
-        extra.push(key);
-      }
-    }
-  }
-
-  const valid = errors.length === 0 && (!strict || extra.length === 0);
-
-  return {
-    valid,
-    errors,
-    missing,
-    extra,
-  };
 }
 
 /**
