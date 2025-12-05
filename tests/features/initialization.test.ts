@@ -22,4 +22,3 @@ describe("Initialization Feature", () => {
     // The validation function wraps Handlebars.compile which handles validation
   });
 });
-
