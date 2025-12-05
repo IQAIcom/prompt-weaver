@@ -1,5 +1,12 @@
 # @iqai/prompt-weaver
 
+## 1.0.3
+
+### Patch Changes
+
+- f4bd4f5: refactor: Remove helpers/transformers array options and enhance README with better examples
+- eea5c0b: Removes helpers
+
 ## 1.0.2
 
 ### Patch Changes
