@@ -1,6 +1,6 @@
 import type { StandardSchemaV1 } from "@standard-schema/spec";
 import Handlebars, { type TemplateDelegate } from "handlebars";
-import type { TemplateHelper, TransformerRegistry } from "./core/plugin-system.js";
+import type { TransformerRegistry } from "./core/plugin-system.js";
 import {
   isStandardSchema,
   parseWithSchema,
@@ -10,10 +10,7 @@ import {
   validateWithSchema,
   validateWithSchemaAsync,
 } from "./schema-validation.js";
-import {
-  getGlobalRegistry,
-  registerHandlebarsHelpers,
-} from "./transformers/index.js";
+import { getGlobalRegistry, registerHandlebarsHelpers } from "./transformers/index.js";
 import { extractVariables, validateTemplate } from "./validation.js";
 
 /**
@@ -144,6 +141,13 @@ export class PromptWeaver<
 
     // Ensure helpers are registered
     registerHandlebarsHelpers();
+
+    // Register transformers from scoped registry with Handlebars
+    // Global registry transformers are already registered via registerTransformer()
+    // but scoped registries need explicit registration
+    if (this.options.registry) {
+      this.registry.registerWithHandlebars(Handlebars);
+    }
 
     // Register partials
     if (options.partials) {
