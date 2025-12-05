@@ -68,7 +68,6 @@ export function extractVariables(templateSource: string): Set<string> {
   return variables;
 }
 
-
 /**
  * Extract line and column from error message or stack trace
  */
