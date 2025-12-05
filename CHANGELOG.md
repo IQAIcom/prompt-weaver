@@ -1,5 +1,11 @@
 # @iqai/prompt-weaver
 
+## 1.0.4
+
+### Patch Changes
+
+- afc5d52: `format()` now automatically validates data against the schema when a schema is provided. No need for separate validation methods!
+
 ## 1.0.3
 
 ### Patch Changes
