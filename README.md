@@ -108,6 +108,8 @@ This example demonstrates:
 - 📅 Date formatting and relative time
 - 💰 Number formatting
 
+> 💡 **More Examples**: Check out the [Examples](#-examples) section for real-world use cases including code review assistants, data analysis prompts, content generation, and more.
+
 ### 🔷 With TypeScript Types
 
 ```typescript
@@ -187,6 +189,65 @@ console.log(metadata.variables, metadata.helpers, metadata.partials);
 const composed = PromptWeaver.compose([template1, template2], "\n\n");
 const weaver = new PromptWeaver(composed);
 ```
+
+## 🏗️ Prompt Builder API
+
+Build prompts programmatically with a fluent API. The Builder is perfect for dynamically constructing prompts in code, then you can convert it to a PromptWeaver instance for rendering with data.
+
+### Basic Example
+
+```typescript
+import { PromptBuilder } from "@iqai/prompt-weaver";
+
+const builder = new PromptBuilder()
+  .heading(1, "User Profile")
+  .section("Personal Information", "Name: {{name}}\nEmail: {{email}}")
+  .list(["Item 1", "Item 2", "Item 3"])
+  .table(
+    ["Name", "Age", "City"],
+    [
+      ["Alice", "30", "New York"],
+      ["Bob", "25", "London"],
+    ]
+  )
+  .conditional(user.isPremium, "Premium features enabled", "Upgrade to premium")
+  .code("function example() { return 'hello'; }", "javascript");
+
+// Convert to PromptWeaver and render with data
+const weaver = builder.toPromptWeaver();
+const output = weaver.format({
+  name: "Alice",
+  email: "alice@example.com",
+});
+
+// Or just get the template string
+const templateString = builder.build();
+```
+
+### Builder Methods
+
+All methods return `this` for method chaining.
+
+**Content Methods:**
+- `.section(title?, content?)` - Add a section (content can be string or function)
+- `.text(text)` - Add raw text content
+- `.code(code, language?)` - Add code block with optional language
+- `.list(items, ordered?)` - Add list (ordered or unordered)
+- `.table(headers, rows)` - Add markdown table
+- `.heading(level, text)` - Add heading (level 1-6)
+- `.quote(text)` - Add blockquote
+- `.separator(char?)` - Add separator line (default: "---")
+
+**Control Flow Methods:**
+- `.conditional(condition, ifTrue, ifFalse?)` - Add conditional content based on boolean
+- `.loop(items, callback)` - Add content by iterating over items
+
+**Utility Methods:**
+- `.build()` - Build final prompt string
+- `.toPromptWeaver(options?)` - Convert to PromptWeaver instance for rendering
+- `.clear()` - Clear all content and start fresh
+
+**Validation:** Use `.toPromptWeaver({ schema })` and then call `weaver.validateSchema(data)` on the returned instance.
 
 ## 🤝 Using Builder and Weaver Together
 
@@ -369,65 +430,6 @@ if (!validation.success) {
 {{#and condition1 condition2}} Content {{/and}}
 {{#or condition1 condition2}} Content {{/or}}
 ```
-
-## 🏗️ Prompt Builder API
-
-Build prompts programmatically with a fluent API. The Builder is perfect for dynamically constructing prompts in code, then you can convert it to a PromptWeaver instance for rendering with data.
-
-### Basic Example
-
-```typescript
-import { PromptBuilder } from "@iqai/prompt-weaver";
-
-const builder = new PromptBuilder()
-  .heading(1, "User Profile")
-  .section("Personal Information", "Name: {{name}}\nEmail: {{email}}")
-  .list(["Item 1", "Item 2", "Item 3"])
-  .table(
-    ["Name", "Age", "City"],
-    [
-      ["Alice", "30", "New York"],
-      ["Bob", "25", "London"],
-    ]
-  )
-  .conditional(user.isPremium, "Premium features enabled", "Upgrade to premium")
-  .code("function example() { return 'hello'; }", "javascript");
-
-// Convert to PromptWeaver and render with data
-const weaver = builder.toPromptWeaver();
-const output = weaver.format({
-  name: "Alice",
-  email: "alice@example.com",
-});
-
-// Or just get the template string
-const templateString = builder.build();
-```
-
-### Builder Methods
-
-All methods return `this` for method chaining.
-
-**Content Methods:**
-- `.section(title?, content?)` - Add a section (content can be string or function)
-- `.text(text)` - Add raw text content
-- `.code(code, language?)` - Add code block with optional language
-- `.list(items, ordered?)` - Add list (ordered or unordered)
-- `.table(headers, rows)` - Add markdown table
-- `.heading(level, text)` - Add heading (level 1-6)
-- `.quote(text)` - Add blockquote
-- `.separator(char?)` - Add separator line (default: "---")
-
-**Control Flow Methods:**
-- `.conditional(condition, ifTrue, ifFalse?)` - Add conditional content based on boolean
-- `.loop(items, callback)` - Add content by iterating over items
-
-**Utility Methods:**
-- `.build()` - Build final prompt string
-- `.toPromptWeaver(options?)` - Convert to PromptWeaver instance for rendering
-- `.clear()` - Clear all content and start fresh
-
-**Validation:** Use `.toPromptWeaver({ schema })` and then call `weaver.validateSchema(data)` on the returned instance.
 
 ## 🎯 Custom Transformers
 
