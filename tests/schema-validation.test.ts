@@ -1,7 +1,13 @@
 import { describe, expect, it } from "vitest";
+import { z } from "zod/v4";
 import {
+  createSafeParser,
+  createSafeParserAsync,
+  formatValidationIssues,
   isStandardSchema,
+  isValidationSuccess,
   parseWithSchema,
+  parseWithSchemaAsync,
   SchemaValidationError,
   validateWithSchema,
   validateWithSchemaAsync,
@@ -12,6 +18,11 @@ describe("Schema Validation", () => {
   describe("Schema Detection", () => {
     it("should detect valid Standard Schema", () => {
       const schema = createMockSchema(() => ({ value: {} }));
+      expect(isStandardSchema(schema)).toBe(true);
+    });
+
+    it("should detect Zod schema as Standard Schema", () => {
+      const schema = z.object({ name: z.string() });
       expect(isStandardSchema(schema)).toBe(true);
     });
 
@@ -83,6 +94,255 @@ describe("Schema Validation", () => {
       expect(() => {
         parseWithSchema(schema, {});
       }).toThrow(SchemaValidationError);
+    });
+  });
+
+  describe("Zod Integration", () => {
+    it("should validate data with Zod schema successfully", () => {
+      const schema = z.object({
+        name: z.string(),
+        age: z.number().positive(),
+      });
+
+      const result = validateWithSchema(schema, { name: "Alice", age: 30 });
+      expect(result.success).toBe(true);
+      expect(result.data).toEqual({ name: "Alice", age: 30 });
+      expect(result.vendor).toBe("zod");
+    });
+
+    it("should return validation errors for invalid Zod data", () => {
+      const schema = z.object({
+        name: z.string(),
+        age: z.number().positive(),
+      });
+
+      const result = validateWithSchema(schema, { name: 123, age: -5 });
+      expect(result.success).toBe(false);
+      expect(result.issues).toBeDefined();
+      expect(result.issues!.length).toBeGreaterThan(0);
+    });
+
+    it("should parse valid data with Zod schema", () => {
+      const schema = z.object({
+        email: z.email(),
+        count: z.number().int(),
+      });
+
+      const data = parseWithSchema(schema, { email: "test@example.com", count: 42 });
+      expect(data).toEqual({ email: "test@example.com", count: 42 });
+    });
+
+    it("should throw SchemaValidationError for invalid Zod data", () => {
+      const schema = z.object({
+        email: z.email(),
+      });
+
+      expect(() => {
+        parseWithSchema(schema, { email: "invalid-email" });
+      }).toThrow(SchemaValidationError);
+    });
+
+    it("should work with Zod transformations", () => {
+      const schema = z.object({
+        name: z.string().transform((s) => s.toUpperCase()),
+        createdAt: z.string().transform((s) => new Date(s)),
+      });
+
+      const result = validateWithSchema(schema, {
+        name: "alice",
+        createdAt: "2024-01-01",
+      });
+
+      expect(result.success).toBe(true);
+      expect(result.data?.name).toBe("ALICE");
+      expect(result.data?.createdAt).toBeInstanceOf(Date);
+    });
+
+    it("should work with Zod optional and default values", () => {
+      const schema = z.object({
+        required: z.string(),
+        optional: z.string().optional(),
+        withDefault: z.string().default("default-value"),
+      });
+
+      const result = validateWithSchema(schema, { required: "hello" });
+      expect(result.success).toBe(true);
+      expect(result.data).toEqual({
+        required: "hello",
+        withDefault: "default-value",
+      });
+    });
+
+    it("should work with Zod union types", () => {
+      const schema = z.union([z.string(), z.number()]);
+
+      const stringResult = validateWithSchema(schema, "hello");
+      expect(stringResult.success).toBe(true);
+      expect(stringResult.data).toBe("hello");
+
+      const numberResult = validateWithSchema(schema, 42);
+      expect(numberResult.success).toBe(true);
+      expect(numberResult.data).toBe(42);
+
+      const invalidResult = validateWithSchema(schema, { invalid: true });
+      expect(invalidResult.success).toBe(false);
+    });
+
+    it("should work with Zod array schemas", () => {
+      const schema = z.array(z.number().positive());
+
+      const validResult = validateWithSchema(schema, [1, 2, 3, 4, 5]);
+      expect(validResult.success).toBe(true);
+      expect(validResult.data).toEqual([1, 2, 3, 4, 5]);
+
+      const invalidResult = validateWithSchema(schema, [1, -2, 3]);
+      expect(invalidResult.success).toBe(false);
+    });
+
+    it("should work with nested Zod schemas", () => {
+      const addressSchema = z.object({
+        street: z.string(),
+        city: z.string(),
+        zip: z.string().regex(/^\d{5}$/),
+      });
+
+      const userSchema = z.object({
+        name: z.string(),
+        address: addressSchema,
+      });
+
+      const validResult = validateWithSchema(userSchema, {
+        name: "John",
+        address: {
+          street: "123 Main St",
+          city: "Springfield",
+          zip: "12345",
+        },
+      });
+      expect(validResult.success).toBe(true);
+
+      const invalidResult = validateWithSchema(userSchema, {
+        name: "John",
+        address: {
+          street: "123 Main St",
+          city: "Springfield",
+          zip: "invalid",
+        },
+      });
+      expect(invalidResult.success).toBe(false);
+    });
+  });
+
+  describe("Async Zod Integration", () => {
+    it("should handle async validation with Zod refine", async () => {
+      const schema = z.object({
+        username: z.string().check(async (ctx) => {
+          // Simulate async check (e.g., database lookup)
+          await new Promise((resolve) => setTimeout(resolve, 10));
+          if (ctx.value === "taken") {
+            ctx.issues.push({ code: "custom", input: ctx.value, message: "Username already taken" });
+          }
+        }),
+      });
+
+      const validResult = await validateWithSchemaAsync(schema, { username: "available" });
+      expect(validResult.success).toBe(true);
+      expect(validResult.data).toEqual({ username: "available" });
+
+      const invalidResult = await validateWithSchemaAsync(schema, { username: "taken" });
+      expect(invalidResult.success).toBe(false);
+      expect(invalidResult.issues?.[0]?.message).toBe("Username already taken");
+    });
+
+    it("should parse async Zod data successfully", async () => {
+      const schema = z.object({
+        value: z.number().check(async (ctx) => {
+          await Promise.resolve();
+          if (ctx.value < 0) {
+            ctx.issues.push({ code: "custom", input: ctx.value, message: "Must be positive" });
+          }
+        }),
+      });
+
+      const data = await parseWithSchemaAsync(schema, { value: 10 });
+      expect(data).toEqual({ value: 10 });
+    });
+
+    it("should throw on async parse failure", async () => {
+      const schema = z.object({
+        value: z.number().check(async (ctx) => {
+          await Promise.resolve();
+          if (ctx.value < 0) {
+            ctx.issues.push({ code: "custom", input: ctx.value, message: "Must be positive" });
+          }
+        }),
+      });
+
+      await expect(parseWithSchemaAsync(schema, { value: -5 })).rejects.toThrow(
+        SchemaValidationError
+      );
+    });
+  });
+
+  describe("Safe Parser with Zod", () => {
+    it("should return parsed data on success", () => {
+      const schema = z.object({ name: z.string() });
+      const safeParse = createSafeParser(schema);
+
+      const result = safeParse({ name: "Alice" });
+      expect(result).toEqual({ name: "Alice" });
+    });
+
+    it("should return undefined on failure", () => {
+      const schema = z.object({ name: z.string() });
+      const safeParse = createSafeParser(schema);
+
+      const result = safeParse({ name: 123 });
+      expect(result).toBeUndefined();
+    });
+
+    it("should work with async safe parser", async () => {
+      const schema = z.object({
+        value: z.number().check(async (ctx) => {
+          await Promise.resolve();
+          if (ctx.value < 0) {
+            ctx.issues.push({ code: "custom", input: ctx.value, message: "Must be positive" });
+          }
+        }),
+      });
+      const safeParseAsync = createSafeParserAsync(schema);
+
+      const validResult = await safeParseAsync({ value: 10 });
+      expect(validResult).toEqual({ value: 10 });
+
+      const invalidResult = await safeParseAsync({ value: -5 });
+      expect(invalidResult).toBeUndefined();
+    });
+  });
+
+  describe("Utility Functions with Zod", () => {
+    it("should correctly identify validation success", () => {
+      const schema = z.object({ name: z.string() });
+
+      const successResult = validateWithSchema(schema, { name: "test" });
+      expect(isValidationSuccess(successResult)).toBe(true);
+
+      const failureResult = validateWithSchema(schema, { name: 123 });
+      expect(isValidationSuccess(failureResult)).toBe(false);
+    });
+
+    it("should format validation issues from Zod", () => {
+      const schema = z.object({
+        name: z.string(),
+        age: z.number(),
+      });
+
+      const result = validateWithSchema(schema, { name: 123, age: "invalid" });
+      expect(result.success).toBe(false);
+
+      const formatted = formatValidationIssues(result.issues!);
+      expect(formatted).toContain("1.");
+      expect(typeof formatted).toBe("string");
     });
   });
 });

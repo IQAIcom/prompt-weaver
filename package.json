@@ -55,7 +55,8 @@
     "@vitest/ui": "^4.0.15",
     "tsup": "^8.3.5",
     "typescript": "^5.6.3",
-    "vitest": "^4.0.15"
+    "vitest": "^4.0.15",
+    "zod": "^4.1.13"
   },
   "peerDependenciesMeta": {}
 }
