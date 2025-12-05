@@ -208,7 +208,7 @@ const validatedOutput = weaverWithSchema.formatWithSchema({
 
 -----
 
-## 🎨 Templating Syntax (Handlebars)
+## 🎨 Templating Syntax
 
 Prompt Weaver utilizes Handlebars syntax for control flow and data formatting.
 
@@ -339,6 +339,8 @@ Prompt Weaver comes with a massive library of transformers to format data direct
 | `json` | `{{data json}}` | `{"a":1}` |
 | `pluralize` | `{{word pluralize}}` | apples |
 
+**Also available:** `replace`, `replaceAll`, `regexReplace`, `trim`, `trimStart`, `trimEnd`, `slugify`, `kebabCase`, `camelCase`, `snakeCase`, `split`, `join`, `truncate`, `slice`, `substring`, `padStart`, `padEnd`, `singularize`
+
 📖 **[View all String Transformers →](TRANSFORMERS.md#-string--content-transformers)**
 
 </details>
@@ -353,7 +355,8 @@ Prompt Weaver comes with a massive library of transformers to format data direct
 | `formatDate` | `{{date formatDate "YYYY-MM-DD"}}` | 2023-12-25 |
 | `relativeTime` | `{{date relativeTime}}` | 2 hours ago |
 | `isToday` | `{{date isToday}}` | true/false |
-| `timestamp` | `{{date timestamp}}` | 1640995200000 |
+
+**Also available:** `formatTime`, `formatDateTime`, `isPast`, `isFuture`, `addDays`, `subtractDays`, `addHours`, `subtractHours`, `addMinutes`, `subtractMinutes`, `timestamp`, `unixTimestamp`
 
 📖 **[View all Date Transformers →](TRANSFORMERS.md#-date--time-transformers)**
 
@@ -367,9 +370,11 @@ Prompt Weaver comes with a massive library of transformers to format data direct
 | Transformer | Example | Result |
 | :--- | :--- | :--- |
 | `currency` | `{{price currency}}` | $1,234.56 |
-| `percent` | `{{val percentage}}` | 12.34% |
-| `compact` | `{{views large compact}}` | 1.2M |
+| `percent` | `{{val percent}}` | 12.34% |
+| `compact` | `{{views compact}}` | 1.2M |
 | `add` | `{{add 5 2}}` | 7 |
+
+**Also available:** `subtract`, `multiply`, `divide`, `increment`, `price`, `signedPercent`, `signedCurrency`, `integer`, `number`
 
 📖 **[View all Number Transformers →](TRANSFORMERS.md#-math--number-transformers)**
 
@@ -388,6 +393,8 @@ Prompt Weaver comes with a massive library of transformers to format data direct
 | `first` / `last` | `{{first items}}` | Get first/last item |
 | `pick` | `{{pick user "name" "id"}}` | Pick specific object keys |
 
+**Also available:** `find`, `findIndex`, `includes`, `reverse`, `nth`, `unique`, `groupBy`, `partition`, `chunk`, `flatten`, `arraySlice`, `length`, `reduce`, `get`, `has`, `keys`, `values`, `omit`, `merge`, `defaults`, `deepGet`, `isEmpty`, `isNotEmpty`
+
 📖 **[View all Collection Transformers →](TRANSFORMERS.md#-collection-transformers-arrays)**
 
 </details>
@@ -403,6 +410,8 @@ Prompt Weaver comes with a massive library of transformers to format data direct
 {{coalesce value "fallback"}}
 {{ifElse isPremium "Rich" "Poor"}}
 ```
+
+**Also available:** `ne` (not equal), `gte`, `lt`, `lte`, `and`, `or`, `default`, `exists`, `isDefined`
 
 📖 **[View all Logic & Comparison Transformers →](TRANSFORMERS.md#-logic--comparison-transformers)**
 
