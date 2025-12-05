@@ -13,7 +13,6 @@ import {
 import {
   getGlobalRegistry,
   registerHandlebarsHelpers,
-  registerTransformer,
 } from "./transformers/index.js";
 import { extractVariables, validateTemplate } from "./validation.js";
 
@@ -21,12 +20,6 @@ import { extractVariables, validateTemplate } from "./validation.js";
  * Options for configuring PromptWeaver instance
  */
 export interface PromptWeaverOptions<TSchema extends StandardSchemaV1 = StandardSchemaV1> {
-  /** Custom transformers to register */
-  transformers?: Array<{
-    name: string;
-    handler: TemplateHelper;
-    metadata?: { description?: string; dependencies?: string[]; version?: string };
-  }>;
   /** Custom transformer registry (defaults to global) */
   registry?: TransformerRegistry;
   /** Partial templates to register */
@@ -151,13 +144,6 @@ export class PromptWeaver<
 
     // Ensure helpers are registered
     registerHandlebarsHelpers();
-
-    // Register custom transformers
-    if (options.transformers) {
-      for (const transformer of options.transformers) {
-        registerTransformer(transformer.name, transformer.handler, transformer.metadata);
-      }
-    }
 
     // Register partials
     if (options.partials) {
