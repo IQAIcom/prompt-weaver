@@ -87,11 +87,24 @@ Transformers are used within Handlebars templates to format and manipulate data.
 
 **Date Format Patterns:**
 - `YYYY` - Full year (e.g., 2024)
+- `YY` - 2-digit year (e.g., 24)
+- `MMMM` - Full month name (e.g., December)
+- `MMM` - Abbreviated month name (e.g., Dec)
 - `MM` - Month (01-12)
+- `M` - Single digit month (1-12)
+- `DDDD` - Full day name (e.g., Monday)
+- `DDD` - Abbreviated day name (e.g., Mon)
 - `DD` - Day (01-31)
+- `D` - Single digit day (1-31)
 - `HH` - Hours (00-23)
 - `mm` - Minutes (00-59)
 - `ss` - Seconds (00-59)
+
+**Examples:**
+- `{{formatDate date "YYYY-MM-DD"}}` → `"2024-12-25"`
+- `{{formatDate date "MMMM DD, YYYY"}}` → `"December 25, 2024"`
+- `{{formatDate date "DDDD, MMM DD"}}` → `"Monday, Dec 25"`
+- `{{formatDate date "M/D/YY"}}` → `"12/25/24"`
 
 ### Relative Time
 
@@ -170,6 +183,7 @@ Transformers are used within Handlebars templates to format and manipulate data.
 | Transformer | Syntax | Description | Example |
 | :--- | :--- | :--- | :--- |
 | `filter` | `{{filter users "active"}}` | Filter array by property | Filters items where property is truthy |
+| `filter` | `{{filter users "status" "active"}}` | Filter array by property equals value | Filters items where property equals value |
 | `map` | `{{map users "name"}}` | Extract property from objects | `[{name:"A"}]` → `["A"]` |
 | `find` | `{{find users "id" 123}}` | Find item by property/value | Returns matching object |
 | `findIndex` | `{{findIndex users "id" 123}}` | Find index by property/value | Returns index or -1 |
@@ -189,6 +203,20 @@ Transformers are used within Handlebars templates to format and manipulate data.
 | `groupBy` | `{{groupBy users "role"}}` | Group by property | Returns object with grouped arrays |
 | `partition` | `{{partition users "active"}}` | Partition into true/false groups | Returns `{true: [...], false: [...]}` |
 | `reduce` | `{{reduce items 0}}` | Reduce array (basic sum) | Sums numeric values |
+| `reduce` | `{{reduce items 0 "sum"}}` | Reduce with operation | Operations: `sum`, `multiply`, `max`, `min`, `concat` |
+
+**Reduce Operations:**
+- `sum` / `add` - Sum all numeric values
+- `multiply` / `product` - Multiply all numeric values
+- `max` - Get maximum value
+- `min` - Get minimum value
+- `concat` / `join` - Concatenate all values as strings
+
+**Examples:**
+- `{{reduce numbers 0 "sum"}}` - Sum all numbers
+- `{{reduce prices 1 "multiply"}}` - Multiply all prices
+- `{{reduce scores 0 "max"}}` - Get maximum score
+- `{{reduce items "" "concat"}}` - Concatenate all items as strings
 
 ---
 
