@@ -4,10 +4,25 @@
  * Uses TypeScript template literal types to infer the expected data structure
  * from a Handlebars template string at compile time.
  *
- * LIMITATIONS:
+ * ⚠️ IMPORTANT LIMITATIONS:
  * - TypeScript has recursion limits, so deeply nested templates may not fully infer
  * - Complex helper expressions may not be fully parsed
- * - For full type safety, use a schema (Zod/Valibot) with PromptWeaver
+ * - Custom transformers registered at runtime are NOT visible to the type system
+ * - Partials ({{> ...}}) prevent full inference since their content is unknown
+ * - Transformers that modify data structure (e.g., filter, map) cannot be understood
+ *
+ * 💡 RECOMMENDED APPROACH:
+ * For production code with custom transformers or partials, use a schema (Zod/Valibot)
+ * with PromptWeaver for full type safety and runtime validation:
+ *
+ * ```ts
+ * import { z } from 'zod';
+ * const schema = z.object({ name: z.string(), count: z.number() });
+ * const weaver = new PromptWeaver(template, { schema });
+ * ```
+ *
+ * Type inference is best-effort and works well for simple templates without
+ * custom transformers or partials. For complex cases, schemas are the reliable solution.
  *
  * @example
  * ```ts
@@ -180,8 +195,10 @@ type VarsToObject<V extends string> = {
   [K in V as ValidKey<K>]: unknown;
 };
 
-/** Create object type for array items */
-type ArrayItemType<V extends string> = [V] extends [never] ? unknown : Prettify<VarsToObject<V>>;
+/** Create object type for array items (loose - allows extra properties) */
+type ArrayItemType<V extends string> = [V] extends [never]
+  ? unknown
+  : Prettify<VarsToObject<V>> & Record<string, unknown>;
 
 /** Create array type for {{#each}} variables */
 type ArraysFromEach<T extends string> = {
@@ -202,13 +219,33 @@ type NonArrayVars<T extends string> = Exclude<
 type HasPartials<T extends string> = T extends `${string}{{>${string}` ? true : false;
 
 /**
+ * Check if template uses subexpressions (helpers that transform data)
+ * These are unreliable for inference since we can't understand transformer behavior
+ */
+type HasComplexTransformers<T extends string> = T extends `${string}{{#each (${string}}${string}`
+  ? true
+  : T extends `${string}{{#if (${string}}${string}`
+    ? true
+    : false;
+
+/**
  * Infer the data type required by a Handlebars template.
  *
  * @template T - Template string literal type (use `as const`)
  * @returns Object type representing the expected data structure
  *
- * NOTE: If template uses partials ({{> ...}}), inference is disabled since
- * we cannot see variables inside partial templates. Use a schema for full type safety.
+ * ⚠️ LIMITATIONS:
+ * - If template uses partials ({{> ...}}), we infer what we can from the main template
+ *   but cannot see variables inside partials. Use a schema for full type safety.
+ * - Complex transformers (subexpressions) may not be fully understood
+ * - Custom transformers registered at runtime are NOT visible to the type system
+ *
+ * 💡 For production code, prefer schemas:
+ * ```ts
+ * import { z } from 'zod';
+ * const schema = z.object({ name: z.string() });
+ * const weaver = new PromptWeaver(template, { schema });
+ * ```
  *
  * @example
  * ```ts
@@ -227,16 +264,33 @@ type HasPartials<T extends string> = T extends `${string}{{>${string}` ? true : 
  * type D3 = InferTemplateData<typeof t3>;
  * // D3 = { user: unknown; products: Array<{ name: unknown }> }
  *
- * // With partials - falls back to Record<string, unknown>
+ * // With partials - requires main template vars, allows extras for partials
  * const t4 = `{{> header}}{{content}}` as const;
  * type D4 = InferTemplateData<typeof t4>;
- * // D4 = Record<string, unknown>
+ * // D4 = { content: unknown } & Record<string, unknown>
+ * // (requires 'content', allows additional fields like 'title' for partials)
  * ```
  */
+/**
+ * Base inferred type (strict - only what's visible in template)
+ */
+type InferredBase<T extends string> = Prettify<VarsToObject<NonArrayVars<T>> & ArraysFromEach<T>>;
+
+/**
+ * Loose type that requires template variables but allows additional properties.
+ * This is important because:
+ * - Partials may need variables not visible in the main template
+ * - Custom transformers may need additional data
+ * - Users should be able to pass extra data without type errors
+ */
+type LooseInferred<T extends string> = InferredBase<T> & Record<string, unknown>;
+
 export type InferTemplateData<T extends string> =
-  HasPartials<T> extends true
+  // If complex transformers detected, be conservative
+  HasComplexTransformers<T> extends true
     ? Record<string, unknown>
-    : Prettify<VarsToObject<NonArrayVars<T>> & ArraysFromEach<T>>;
+    : // Always use loose inference - require main template vars, allow extras
+      LooseInferred<T>;
 
 /**
  * Extract just the variable names (top-level keys) from a template

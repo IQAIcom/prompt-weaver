@@ -135,24 +135,42 @@ type VarsToObject<V extends string> = { [K in V]: unknown };
 
 ## Limitations
 
-1. **TypeScript Recursion Limits**: Extremely complex templates may hit TypeScript's type recursion limits
-2. **Unknown Types**: All inferred types are `unknown` - we can't determine if `{{price}}` is string or number
-3. **Literal Types Required**: You must use `as const` to get literal string types
-4. **No Runtime Validation**: This is compile-time only - use schemas for runtime validation
+⚠️ **Important**: Template type inference is **best-effort** and has significant limitations:
 
-## Best Practice: Combine with Schemas
+1. **Custom Transformers**: Transformers registered at runtime (via `registerTransformer()` or custom registries) are **NOT visible** to the TypeScript type system. The type inference cannot understand what custom transformers do.
+   ```typescript
+   // ❌ Type inference cannot see this transformer
+   registerTransformer("filter", (arr, condition) => { /* ... */ });
+   const template = `{{#each (filter items 'active')}}{{name}}{{/each}}` as const;
+   // Inference fails - can't understand what 'filter' does
+   ```
 
-For full type safety (compile-time + runtime), combine type inference with schemas:
+2. **Partials**: When templates use partials (`{{> partialName}}`), inference can only see variables in the main template, not inside partials. However, the type is **loose** - it requires main template variables but allows any additional properties for partials.
+
+3. **Complex Helper Expressions**: Subexpressions like `{{#each (helper arg)}}` may not be fully understood since the type system can't analyze transformer behavior.
+
+4. **TypeScript Recursion Limits**: Extremely complex templates may hit TypeScript's type recursion limits
+
+5. **Unknown Types**: All inferred types are `unknown` - we can't determine if `{{price}}` is string or number
+
+6. **Literal Types Required**: You must use `as const` to get literal string types
+
+7. **No Runtime Validation**: This is compile-time only - use schemas for runtime validation
+
+## When to Use What
+
+### ✅ Use Schemas (RECOMMENDED for Production)
+
+**Always use schemas when:**
+- You have custom transformers
+- You use partials
+- You need runtime validation
+- You need specific types (not just `unknown`)
+- You want reliable type safety
 
 ```typescript
 import { z } from "zod";
-import { InferTemplateData, PromptWeaver } from "@iqai/prompt-weaver";
-
-const template = `Hello {{name}}! Age: {{age}}` as const;
-
-// Use inference to guide your schema definition
-type Inferred = InferTemplateData<typeof template>;
-// Inferred = { name: unknown; age: unknown }
+import { PromptWeaver } from "@iqai/prompt-weaver";
 
 // Define schema with actual types
 const schema = z.object({
@@ -160,8 +178,56 @@ const schema = z.object({
   age: z.number().positive(),
 });
 
-// PromptWeaver validates at runtime
+// PromptWeaver validates at runtime + provides type safety
 const weaver = new PromptWeaver(template, { schema });
+const result = weaver.format({ name: "Alice", age: 30 }); // ✅ Type-safe + validated
+```
+
+### ⚠️ Template Inference (Best-Effort, Simple Cases Only)
+
+**Only use template inference when:**
+- You have simple templates without custom transformers
+- You don't use partials
+- You're okay with `unknown` types
+- You're prototyping or in development
+
+```typescript
+// Simple template - inference works
+const template = `Hello {{name}}! Age: {{age}}` as const;
+const weaver = new PromptWeaver(template);
+// format() infers: { name: unknown; age: unknown }
+```
+
+**Don't use template inference when:**
+- ❌ You have custom transformers
+- ❌ You use partials
+- ❌ You need reliable type safety
+- ❌ You're in production code
+
+## Best Practice: Use Schemas
+
+For production code, **always use schemas**. They provide:
+- ✅ Full type safety with specific types
+- ✅ Runtime validation
+- ✅ Works with custom transformers
+- ✅ Works with partials
+- ✅ Reliable and predictable
+
+```typescript
+import { z } from "zod";
+import { PromptWeaver } from "@iqai/prompt-weaver";
+
+const schema = z.object({
+  name: z.string(),
+  age: z.number().positive(),
+});
+
+// Option 1: Pass schema in options
+const weaver = new PromptWeaver(template, { schema });
+
+// Option 2: Use explicit factory method (clearer intent)
+const weaver2 = PromptWeaver.createWithSchema(template, { schema });
+
 const result = weaver.format({ name: "Alice", age: 30 }); // ✅ Type-safe + validated
 ```
 
@@ -169,10 +235,19 @@ const result = weaver.format({ name: "Alice", age: 30 }); // ✅ Type-safe + val
 
 | Export | Type | Description |
 |--------|------|-------------|
-| `PromptWeaver` | Class | **Main class** - now with automatic type inference from template |
-| `InferTemplateData<T>` | Type | Infer data structure from template |
+| `PromptWeaver` | Class | **Main class** - loose type inference from template |
+| `InferTemplateData<T>` | Type | Infer data structure from template (loose) |
 | `TemplateVariables<T>` | Type | Extract variable names as union |
 | `TemplateArrays<T>` | Type | Extract array names from `{{#each}}` |
 | `TemplateConditions<T>` | Type | Extract condition variables from `{{#if}}` |
 | `TemplateDataType<T>` | Type | Alias for `InferTemplateData` |
 | `createTypedTemplate()` | Function | Create typed template object (for inspection) |
+
+## Quick Reference
+
+| Scenario | Solution |
+|----------|----------|
+| Any template | `new PromptWeaver(template)` - loose inference allows extras |
+| With partials | `new PromptWeaver(template, { partials })` - just works! |
+| Need runtime validation | `new PromptWeaver(template, { schema })` |
+| Custom transformers | `new PromptWeaver(template)` - loose inference allows extras |

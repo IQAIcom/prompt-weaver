@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
+import { z } from "zod";
 import {
   createTypedTemplate,
   PromptWeaver,
+  registerTransformer,
   type InferTemplateData,
   type TemplateArrays,
   type TemplateVariables,
@@ -221,6 +223,146 @@ describe("Template Type Inference", () => {
       expect(result).toContain("User: Alice");
       expect(result).toContain("Order #001");
       expect(result).toContain("Order #002");
+    });
+  });
+
+  describe("Loose type inference - allows extra fields", () => {
+    it("should work with custom transformers (loose inference allows extra fields)", () => {
+      // Register a custom transformer
+      registerTransformer("double", (value: number) => value * 2);
+
+      // Template uses custom transformer - inference extracts 'value'
+      const template = `Doubled: {{double value}}`;
+      const weaver = new PromptWeaver(template);
+
+      // Loose type allows passing the data
+      const result = weaver.format({ value: 21 });
+      expect(result).toBe("Doubled: 42");
+    });
+
+    it("should work with partials (extra fields for partial variables)", () => {
+      const template = `{{> header}}{{content}}{{> footer}}`;
+      const weaver = new PromptWeaver(template, {
+        partials: {
+          header: `<h1>{{title}}</h1>\n`,
+          footer: `\n<footer>{{footerText}}</footer>`,
+        },
+      });
+
+      // 'content' is required (main template), 'title' and 'footerText' are extras for partials
+      const result = weaver.format({
+        title: "Welcome",
+        content: "Main content here",
+        footerText: "Copyright 2025",
+      });
+
+      expect(result).toContain("<h1>Welcome</h1>");
+      expect(result).toContain("Main content here");
+      expect(result).toContain("<footer>Copyright 2025</footer>");
+    });
+
+    it("should work with arrays", () => {
+      const template = `{{title}}\n{{#each tasks}}- [{{#if done}}x{{else}} {{/if}}] {{name}}\n{{/each}}`;
+      const weaver = new PromptWeaver(template);
+
+      const result = weaver.format({
+        title: "My Tasks",
+        tasks: [
+          { name: "Task 1", done: true },
+          { name: "Task 2", done: false },
+        ],
+      });
+
+      expect(result).toContain("My Tasks");
+      expect(result).toContain("[x] Task 1");
+      expect(result).toContain("[ ] Task 2");
+    });
+  });
+
+  describe("Schema validation", () => {
+    it("should create weaver with schema validation", () => {
+      const schema = z.object({
+        name: z.string(),
+        age: z.number().positive(),
+      });
+
+      const template = `{{name}} is {{age}} years old.`;
+      const weaver = new PromptWeaver(template, { schema });
+
+      const result = weaver.format({ name: "Alice", age: 30 });
+      expect(result).toBe("Alice is 30 years old.");
+    });
+
+    it("should validate data at runtime", () => {
+      const schema = z.object({
+        count: z.number().positive(),
+      });
+
+      const template = `Count: {{count}}`;
+      const weaver = new PromptWeaver(template, { schema });
+
+      // Should throw on invalid data
+      expect(() => {
+        weaver.format({ count: -5 });
+      }).toThrow();
+    });
+
+    it("should work with complex schemas", () => {
+      const schema = z.object({
+        user: z.object({
+          name: z.string(),
+          email: z.string().email(),
+        }),
+        items: z.array(
+          z.object({
+            title: z.string(),
+            quantity: z.number(),
+          })
+        ),
+      });
+
+      const template =
+        "User: {{user.name}} ({{user.email}})\n{{#each items}}- {{title}}: {{quantity}} units\n{{/each}}";
+
+      const weaver = new PromptWeaver(template, { schema });
+
+      const result = weaver.format({
+        user: { name: "Alice", email: "alice@example.com" },
+        items: [
+          { title: "Widget", quantity: 5 },
+          { title: "Gadget", quantity: 10 },
+        ],
+      });
+
+      expect(result).toContain("User: Alice (alice@example.com)");
+      expect(result).toContain("Widget: 5 units");
+      expect(result).toContain("Gadget: 10 units");
+    });
+  });
+
+  describe("Edge cases", () => {
+    it("should handle static templates", () => {
+      const template = `Static content only`;
+      const weaver = new PromptWeaver(template);
+
+      const result = weaver.format({});
+      expect(result).toBe("Static content only");
+    });
+
+    it("should handle nested object paths", () => {
+      const template = `{{user.profile.name}}: {{user.profile.bio}}`;
+      const weaver = new PromptWeaver(template);
+
+      const result = weaver.format({
+        user: {
+          profile: {
+            name: "Alice",
+            bio: "Developer",
+          },
+        },
+      });
+
+      expect(result).toBe("Alice: Developer");
     });
   });
 });

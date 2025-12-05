@@ -88,6 +88,7 @@ export interface PromptWeaverOptions<TSchema extends StandardSchemaV1 = Standard
   enableCache?: boolean;
 }
 
+
 /**
  * Template metadata extracted from the template
  */
@@ -103,20 +104,26 @@ export interface TemplateMetadata {
 /**
  * Helper type to infer data type.
  * Priority:
- * 1. If schema provides a concrete type (has keys), use it
- * 2. If template is a literal string, use InferTemplateData
+ * 1. If schema provides a concrete type (has keys), use it (RECOMMENDED for production)
+ * 2. If template is a literal string, use InferTemplateData (best-effort, limited)
  * 3. Otherwise, fall back to Record<string, unknown>
+ *
+ * Note: Template inference is best-effort and has limitations:
+ * - Custom transformers registered at runtime are not visible
+ * - Partials prevent full inference
+ * - Complex helper expressions may not be understood
+ * For reliable type safety, always use a schema.
  */
 type InferData<
   TTemplate extends string,
   TSchema extends StandardSchemaV1,
 > = // Check if schema provides useful type info (has at least one key)
 keyof StandardSchemaV1.InferInput<TSchema> extends never
-  ? // No schema type info - try template inference
+  ? // No schema type info - try template inference (best-effort)
     string extends TTemplate
     ? Record<string, unknown> // Template is generic string, no inference possible
-    : InferTemplateData<TTemplate> // Use template inference
-  : // Schema provides type info - use it
+    : InferTemplateData<TTemplate> // Use template inference (may be incomplete)
+  : // Schema provides type info - use it (RECOMMENDED)
     StandardSchemaV1.InferInput<TSchema> extends Record<string, unknown>
     ? StandardSchemaV1.InferInput<TSchema>
     : Record<string, unknown>;
@@ -125,9 +132,10 @@ keyof StandardSchemaV1.InferInput<TSchema> extends never
  * Template engine for rendering Prompt Weaver templates.
  * Provides a clean API for building and rendering prompts with a powerful template system.
  *
- * Type inference is automatic:
- * - With schema: `format()` requires the schema's input type
- * - Without schema: `format()` infers types from template (use `as const`)
+ * Type inference is automatic and loose:
+ * - **Required**: Variables from the main template must be provided
+ * - **Allowed**: Extra fields for partials, custom transformers, etc.
+ * - With schema: Full runtime validation + specific types
  *
  * @template TTemplate - The template string literal type (for automatic inference)
  * @template TSchema - Standard Schema validator type
@@ -135,33 +143,29 @@ keyof StandardSchemaV1.InferInput<TSchema> extends never
  *
  * @example
  * ```ts
- * // Automatic type inference from template (use `as const`)
- * const template = `Hello {{name}}! You have {{count}} items.` as const;
- * const engine = new PromptWeaver(template);
- * // format() infers: { name: unknown; count: unknown }
- * engine.format({ name: "Alice", count: 5 });
+ * // Simple template - loose inference
+ * const template = `Hello {{name}}!` as const;
+ * const weaver = new PromptWeaver(template);
+ * weaver.format({ name: "Alice" });           // ✅ Required field
+ * weaver.format({ name: "Alice", extra: 1 }); // ✅ Extra fields allowed
  * ```
  *
  * @example
  * ```ts
- * // Array inference from {{#each}}
- * const template = `{{#each items}}{{title}}{{/each}}` as const;
- * const engine = new PromptWeaver(template);
- * // format() infers: { items: Array<{ title: unknown }> }
- * engine.format({ items: [{ title: "Item 1" }] });
- * ```
- *
- * @example
- * ```ts
- * // With schema for specific types + runtime validation
- * import { z } from 'zod';
- * const schema = z.object({
- *   name: z.string(),
- *   age: z.number(),
+ * // With partials - extra fields for partial variables
+ * const weaver = new PromptWeaver(`{{> header}}{{content}}`, {
+ *   partials: { header: `<h1>{{title}}</h1>` }
  * });
- * const engine = new PromptWeaver(template, { schema });
- * // format() requires { name: string; age: number }
- * engine.format({ name: "World", age: 30 });
+ * weaver.format({ content: "Body", title: "Welcome" }); // ✅ Works!
+ * ```
+ *
+ * @example
+ * ```ts
+ * // With schema for runtime validation + specific types
+ * import { z } from 'zod';
+ * const schema = z.object({ name: z.string(), age: z.number() });
+ * const weaver = new PromptWeaver(template, { schema });
+ * weaver.format({ name: "Alice", age: 30 }); // ✅ Validated at runtime
  * ```
  */
 export class PromptWeaver<

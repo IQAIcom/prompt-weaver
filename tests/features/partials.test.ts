@@ -12,6 +12,7 @@ describe("Partials Feature", () => {
         },
       });
 
+      // Type is loose: requires 'content' from main template, allows 'title' for partial
       const result = weaver.format({
         title: "My Page",
         content: "Hello World",
@@ -29,6 +30,7 @@ describe("Partials Feature", () => {
       const weaver = new PromptWeaver(template);
       weaver.setPartial("header", "# {{title}}\n");
 
+      // Type is loose: requires 'content' from main template, allows 'title' for partial
       const result = weaver.format({
         title: "Test",
         content: "Body",
