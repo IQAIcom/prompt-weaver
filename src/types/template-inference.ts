@@ -233,9 +233,10 @@ type HasPartials<T extends string> = T extends `${string}{{>${string}` ? true : 
  * // D4 = Record<string, unknown>
  * ```
  */
-export type InferTemplateData<T extends string> = HasPartials<T> extends true
-  ? Record<string, unknown>
-  : Prettify<VarsToObject<NonArrayVars<T>> & ArraysFromEach<T>>;
+export type InferTemplateData<T extends string> =
+  HasPartials<T> extends true
+    ? Record<string, unknown>
+    : Prettify<VarsToObject<NonArrayVars<T>> & ArraysFromEach<T>>;
 
 /**
  * Extract just the variable names (top-level keys) from a template
