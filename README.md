@@ -166,6 +166,33 @@ const weaver = builder.toPromptWeaver();
 const output = weaver.format({ name: "Alice" });
 ```
 
+**Output:**
+
+````text
+# User Profile
+
+## Info
+
+Name: Alice
+
+- Rule 1
+- Rule 2
+
+✅ Verified
+
+```json
+{
+  "version": "1.0",
+  "status": "active"
+}
+```
+
+[Documentation](https://example.com)
+
+- [x] Task 1
+- [ ] Task 2
+````
+
 ### When to Use Each Approach
 
 | Scenario | Use Builder | Use Weaver | Use Both |
@@ -195,6 +222,32 @@ const weaver = builder.toPromptWeaver();
 const output1 = weaver.format({ userName: "Alice", balance: 1000, isPremium: true });
 const output2 = weaver.format({ userName: "Bob", balance: 500, isPremium: false });
 
+// Output 1:
+// # User Dashboard
+//
+// ## Welcome
+//
+// Hello Alice!
+//
+// ## Account Info
+//
+// Your balance is $1,000.00
+//
+// ⭐ Premium Member
+
+// Output 2:
+// # User Dashboard
+//
+// ## Welcome
+//
+// Hello Bob!
+//
+// ## Account Info
+//
+// Your balance is $500.00
+//
+// Upgrade to Premium
+
 // Step 4: Optional - Validate with schema (TypeScript infers types automatically)
 import { z } from 'zod';
 const schema = z.object({
@@ -222,24 +275,20 @@ Prompt Weaver utilizes Handlebars syntax for control flow and data formatting.
 
 ### Variable Interpolation & Transformers
 
-Variables are interpolated using `{{variableName}}`. You can format variables using **transformers** (Handlebars helpers):
+Variables are interpolated using `{{variableName}}`. Format variables using **transformers** (Handlebars helpers): `{{transformer variableName}}` or `{{transformer variableName arg1 arg2}}`.
 
+**Basic examples:**
 ```handlebars
-{{transformer variableName}}
-{{transformer variableName arg1 arg2}}
+Hello {{name}}!                        <!-- Simple variable -->
+Hello {{capitalize name}}!             <!-- With transformer -->
+Your balance is {{currency balance}}   <!-- Format as currency -->
+Due {{relativeTime deadline}}         <!-- Relative time -->
 ```
 
-**Basic variable:**
-```handlebars
-Hello {{name}}!
-```
+Transformers allow you to format data directly within your templates without preprocessing. See the [Built-in Transformers](#️-built-in-transformers) section below for available options.
 
-**With transformer:**
-```handlebars
-Hello {{capitalize name}}!          <!-- Capitalizes the name -->
-Your balance is {{currency balance}}  <!-- Formats as currency: $1,234.56 -->
-Due {{relativeTime deadline}}        <!-- Shows relative time: "in 3 days" -->
-```
+<details>
+<summary><strong>View Detailed Examples</strong></summary>
 
 **Transformers with arguments:**
 ```handlebars
@@ -259,7 +308,7 @@ Due {{relativeTime deadline}}        <!-- Shows relative time: "in 3 days" -->
 {{/each}}
 ```
 
-Transformers allow you to format data directly within your templates without preprocessing. See the [Built-in Transformers](#️-built-in-transformers) section below for available options.
+</details>
 
 ### Loops
 
@@ -310,22 +359,26 @@ Transformers allow you to format data directly within your templates without pre
 
 ### Partials (Reusable Fragments)
 
-Define reusable template fragments that can be included anywhere. Perfect for headers, footers, user cards, or any repeated sections.
+Define reusable template fragments that can be included anywhere using `{{> partialName}}`. Perfect for headers, footers, user cards, or any repeated sections.
 
-**Registration:**
-
+**Basic usage:**
 ```typescript
 const template = "{{> header}}\n{{content}}\n{{> footer}}";
 const weaver = new PromptWeaver(template, {
   partials: {
-    header: "# {{title}}\nRole: {{role}}\n---",
-    footer: "\n---\nPlease respond in JSON format."
+    header: "# {{title}}\n---",
+    footer: "---\nPlease respond in JSON format."
   }
 });
 
 // Or register programmatically:
 weaver.setPartial("header", "# {{title}}\n---");
 ```
+
+Partials inherit the parent context and can include other partials. They can be reused across multiple PromptWeaver instances, enabling DRY principles.
+
+<details>
+<summary><strong>View Detailed Examples</strong></summary>
 
 **Context Access & Nesting:**
 
@@ -381,6 +434,68 @@ const weaver = new PromptWeaver(promptTemplate, {
   }
 });
 ```
+
+**Reusability Example:**
+
+Partials can be reused across multiple PromptWeaver instances. Define a partial once and use it in different templates:
+
+```typescript
+// Define a reusable partial template
+const userCardPartial = `
+## User Profile
+- **Name**: {{name}}
+- **Email**: {{email}}
+- **Role**: {{role}}
+{{#if isPremium}}⭐ Premium Member{{/if}}
+---`;
+
+// Use the same partial in multiple PromptWeaver instances
+const emailTemplate = `{{> userCard}}\n\nYour account summary:\n{{summary}}`;
+const reportTemplate = `{{> userCard}}\n\n## Activity Report\n{{report}}`;
+
+const emailWeaver = new PromptWeaver(emailTemplate, {
+  partials: { userCard: userCardPartial }
+});
+
+const reportWeaver = new PromptWeaver(reportTemplate, {
+  partials: { userCard: userCardPartial }
+});
+
+// Both instances can use the same partial with different data
+const emailOutput = emailWeaver.format({
+  name: "Alice",
+  email: "alice@example.com",
+  role: "Developer",
+  isPremium: true,
+  summary: "You have 5 unread messages."
+});
+
+const reportOutput = reportWeaver.format({
+  name: "Alice",
+  email: "alice@example.com",
+  role: "Developer",
+  isPremium: true,
+  report: "Last login: 2 hours ago"
+});
+```
+
+**Output:**
+
+```text
+## User Profile
+- **Name**: Alice
+- **Email**: alice@example.com
+- **Role**: Developer
+⭐ Premium Member
+---
+
+Your account summary:
+You have 5 unread messages.
+```
+
+The same `userCard` partial is reused in both templates, demonstrating how partials enable DRY (Don't Repeat Yourself) principles across your prompt templates.
+
+</details>
 
 -----
 
@@ -596,14 +711,50 @@ if (!result.valid) {
 
 ### Composition
 
-Merge multiple templates into one context.
+Merge multiple templates into one context. The `compose` method merges templates **in the order they appear in the array**, separated by two newlines (`\n\n`) by default.
 
 ```typescript
+const headerTemplate = "# {{title}}";
+const bodyTemplate = "{{content}}";
+const footerTemplate = "---\nGenerated on {{formatDate date}}";
+
+// Templates are merged in order: header → body → footer
 const composed = PromptWeaver.compose([headerTemplate, bodyTemplate, footerTemplate]);
 const weaver = new PromptWeaver(composed);
+
+const output = weaver.format({
+  title: "My Document",
+  content: "Main content here",
+  date: new Date()
+});
 ```
 
-Or create directly:
+**Output:**
+
+```text
+# My Document
+
+Main content here
+
+---
+Generated on Dec 12, 2024
+```
+
+**Custom Separator:**
+
+You can specify a custom separator between templates:
+
+```typescript
+// Use a single newline instead of double newline
+const composed = PromptWeaver.compose([headerTemplate, bodyTemplate], "\n");
+
+// Use a custom separator
+const composed = PromptWeaver.compose([headerTemplate, bodyTemplate], "\n---\n");
+```
+
+**Direct Creation:**
+
+Or create a PromptWeaver instance directly from composed templates:
 
 ```typescript
 import { z } from 'zod';
