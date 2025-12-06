@@ -98,6 +98,18 @@ export class TemplateCompilationError extends Error {
 /**
  * Extract base variable name from a PathExpression in the AST
  * Handles nested properties (e.g., user.profile.name -> user)
+ *
+ * @param node - AST node to extract variable from
+ * @returns Base variable name or null if not a valid variable reference
+ *
+ * @example
+ * // PathExpression with parts ["user", "profile", "name"] returns "user"
+ * extractBaseVariable(userProfileNode) // => "user"
+ *
+ * @example
+ * // Special variables are filtered out
+ * extractBaseVariable(thisNode) // => null
+ * extractBaseVariable(dataNode) // => null
  */
 function extractBaseVariable(node: hbs.AST.Node): string | null {
   // Only process PathExpression nodes
@@ -118,7 +130,21 @@ function extractBaseVariable(node: hbs.AST.Node): string | null {
 }
 
 /**
- * Custom AST visitor for extracting variables from a Handlebars template
+ * Custom AST visitor for extracting variables from a Handlebars template.
+ * Extends Handlebars.Visitor to traverse the AST and identify variable references.
+ *
+ * The visitor distinguishes between:
+ * - Helper names (e.g., "currency" in {{currency balance}})
+ * - Variable references (e.g., "balance" in {{currency balance}})
+ * - Block helper parameters (e.g., "items" in {{#each items}})
+ *
+ * @example
+ * ```typescript
+ * const ast = Handlebars.parse("{{name}} {{currency balance}}");
+ * const visitor = new VariableExtractorVisitor();
+ * visitor.accept(ast);
+ * console.log(visitor.variables); // Set { "name", "balance" }
+ * ```
  */
 class VariableExtractorVisitor extends Handlebars.Visitor {
   variables = new Set<string>();
@@ -165,8 +191,19 @@ class VariableExtractorVisitor extends Handlebars.Visitor {
 }
 
 /**
- * Extract base variable from bracket notation (e.g., items[0] -> items)
- * This handles edge cases where templates use bracket notation that's not standard Handlebars
+ * Extract base variable from bracket notation (e.g., items[0] -> items).
+ * This handles edge cases where templates use bracket notation that's not standard Handlebars syntax.
+ *
+ * Note: Standard Handlebars uses dot notation (items.0) or lookup helper for array access.
+ * This function provides compatibility for non-standard bracket notation.
+ *
+ * @param expr - Expression string that may contain bracket notation
+ * @returns Base variable name or null if not a valid variable
+ *
+ * @example
+ * extractVariableFromBracketNotation("items[0]") // => "items"
+ * extractVariableFromBracketNotation("user.name") // => "user"
+ * extractVariableFromBracketNotation("@index") // => null
  */
 function extractVariableFromBracketNotation(expr: string): string | null {
   // Match patterns like items[0] or user[id]
@@ -185,8 +222,19 @@ function extractVariableFromBracketNotation(expr: string): string | null {
 }
 
 /**
- * Fallback regex-based extraction for templates that don't parse as valid Handlebars
- * This handles edge cases like bracket notation (items[0]) that aren't standard Handlebars syntax
+ * Fallback regex-based extraction for templates that don't parse as valid Handlebars.
+ * This handles edge cases like bracket notation (items[0]) that aren't standard Handlebars syntax.
+ *
+ * This fallback is triggered when:
+ * - Templates use bracket notation for array access (e.g., {{items[0]}})
+ * - Other non-standard syntax that Handlebars.parse() rejects
+ *
+ * @param templateSource - The template source string
+ * @returns Set of variable names found using regex patterns
+ *
+ * @example
+ * // Handles bracket notation that would fail AST parsing
+ * extractVariablesFallback("{{items[0].name}}") // => Set { "items" }
  */
 function extractVariablesFallback(templateSource: string): Set<string> {
   const variables = new Set<string>();
@@ -258,9 +306,11 @@ export function extractVariables(templateSource: string): Set<string> {
     visitor.accept(ast);
 
     return visitor.variables;
-  } catch {
-    // If parsing fails (e.g., due to bracket notation), fall back to regex-based extraction
+  } catch (_error) {
+    // If parsing fails (e.g., due to bracket notation like items[0]), fall back to regex-based extraction
     // This handles edge cases while still benefiting from AST for valid templates
+    // Note: We don't log the error as invalid syntax is expected for edge cases
+    // The validateTemplate function will properly report actual syntax errors
     return extractVariablesFallback(templateSource);
   }
 }
