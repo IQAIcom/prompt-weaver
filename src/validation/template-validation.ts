@@ -1,5 +1,8 @@
 import Handlebars from "handlebars";
 
+// Note: hbs namespace is globally available from @types/handlebars
+// It provides AST type definitions used for type-safe AST traversal
+
 /**
  * Template compilation error with line number context
  */
