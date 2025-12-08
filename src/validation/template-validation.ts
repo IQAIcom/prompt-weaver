@@ -1,5 +1,8 @@
 import Handlebars from "handlebars";
 
+// Note: hbs namespace is globally available from @types/handlebars
+// It provides AST type definitions used for type-safe AST traversal
+
 /**
  * Template compilation error with line number context
  */
@@ -48,7 +51,7 @@ export class TemplateCompilationError extends Error {
         }
 
         if (contextLines.length > 0) {
-          msg += "\n\nContext:\n" + contextLines.join("\n");
+          msg += `\n\nContext:\n${contextLines.join("\n")}`;
         }
       }
     }
@@ -56,7 +59,7 @@ export class TemplateCompilationError extends Error {
     // Add suggestions for common errors
     const suggestions = this.getSuggestions();
     if (suggestions.length > 0) {
-      msg += "\n\nSuggestions:\n" + suggestions.map((s) => `  - ${s}`).join("\n");
+      msg += `\n\nSuggestions:\n${suggestions.map((s) => `  - ${s}`).join("\n")}`;
     }
 
     return msg;
@@ -96,77 +99,125 @@ export class TemplateCompilationError extends Error {
 }
 
 /**
- * Extract variable name from a Handlebars expression
- * Handles nested properties, array access, and helper arguments
+ * Extract base variable name from a PathExpression in the AST
+ * Handles nested properties (e.g., user.profile.name -> user)
+ *
+ * @param node - AST node to extract variable from
+ * @returns Base variable name or null if not a valid variable reference
+ *
+ * @example
+ * // PathExpression with parts ["user", "profile", "name"] returns "user"
+ * extractBaseVariable(userProfileNode) // => "user"
+ *
+ * @example
+ * // Special variables are filtered out
+ * extractBaseVariable(thisNode) // => null
+ * extractBaseVariable(dataNode) // => null
  */
-function extractVariableFromExpression(expr: string): string | null {
-  // Remove leading/trailing whitespace
-  expr = expr.trim();
-
-  // Skip block helpers and closing tags
-  if (expr.startsWith("#") || expr.startsWith("/") || expr.startsWith("^")) {
+function extractBaseVariable(node: hbs.AST.Node): string | null {
+  // Only process PathExpression nodes
+  if (node.type !== "PathExpression") {
     return null;
   }
 
-  // Handle helper expressions like {{capitalize user.name}} or {{formatDate date "YYYY-MM-DD"}}
-  // In Handlebars, helpers can be called with or without parentheses
-  // First, check for parenthesized helper calls
-  if (expr.includes("(")) {
-    // Find the opening parenthesis
-    const openParen = expr.indexOf("(");
-    const afterParen = expr.slice(openParen + 1).trim();
+  const path = node as hbs.AST.PathExpression;
 
-    // Extract first argument (before comma or closing paren)
-    const firstArgEnd = Math.min(
-      afterParen.indexOf(",") >= 0 ? afterParen.indexOf(",") : afterParen.length,
-      afterParen.indexOf(")") >= 0 ? afterParen.indexOf(")") : afterParen.length
-    );
-    const firstArg = afterParen.slice(0, firstArgEnd).trim();
+  // Skip special variables (starts with @) or 'this'
+  if (path.data || path.parts[0] === "this") {
+    return null;
+  }
 
-    // Remove quotes if it's a string literal
-    if (
-      (firstArg.startsWith('"') && firstArg.endsWith('"')) ||
-      (firstArg.startsWith("'") && firstArg.endsWith("'"))
-    ) {
-      return null; // String literal, not a variable
-    }
+  // Return the base variable (first part of the path)
+  const baseVar = path.parts[0];
+  return baseVar || null;
+}
 
-    // Process the first argument
-    expr = firstArg;
-  } else {
-    // Handle space-separated helper calls like {{capitalize user.name}}
-    // Split by spaces - first token might be helper name, second might be variable
-    const parts = expr.split(/\s+/);
-    if (parts.length > 1) {
-      // Check if first token looks like a helper (no dots, no brackets)
-      const firstToken = parts[0];
-      if (!firstToken.includes(".") && !firstToken.includes("[") && !firstToken.includes("(")) {
-        // Likely a helper name, use the second token as the variable
-        expr = parts.slice(1).join(" ");
+/**
+ * Custom AST visitor for extracting variables from a Handlebars template.
+ * Extends Handlebars.Visitor to traverse the AST and identify variable references.
+ *
+ * The visitor distinguishes between:
+ * - Helper names (e.g., "currency" in {{currency balance}})
+ * - Variable references (e.g., "balance" in {{currency balance}})
+ * - Block helper parameters (e.g., "items" in {{#each items}})
+ *
+ * @example
+ * ```typescript
+ * const ast = Handlebars.parse("{{name}} {{currency balance}}");
+ * const visitor = new VariableExtractorVisitor();
+ * visitor.accept(ast);
+ * console.log(visitor.variables); // Set { "name", "balance" }
+ * ```
+ */
+class VariableExtractorVisitor extends Handlebars.Visitor {
+  variables = new Set<string>();
+
+  // Visit MustacheStatement nodes (e.g., {{name}}, {{helper arg}})
+  MustacheStatement(mustache: hbs.AST.MustacheStatement): void {
+    // If there are parameters, the path is a helper name, not a variable
+    // Extract variables only from the parameters
+    if (mustache.params && mustache.params.length > 0) {
+      // Path is a helper name, extract variables from parameters only
+      for (const param of mustache.params) {
+        const paramVar = extractBaseVariable(param);
+        if (paramVar) {
+          this.variables.add(paramVar);
+        }
       }
-      // Otherwise, use the first token as the variable
+    } else {
+      // No parameters, the path itself is a variable reference
+      const baseVar = extractBaseVariable(mustache.path);
+      if (baseVar) {
+        this.variables.add(baseVar);
+      }
     }
+
+    // Continue traversal
+    super.MustacheStatement(mustache);
   }
 
-  // Split by spaces to get the first token (now should be the variable)
-  const parts = expr.split(/\s+/);
-  const variable = parts[0];
+  // Visit BlockStatement nodes (e.g., {{#if}}, {{#each}})
+  BlockStatement(block: hbs.AST.BlockStatement): void {
+    // Extract variables from block parameters (not the helper name itself)
+    if (block.params) {
+      for (const param of block.params) {
+        const paramVar = extractBaseVariable(param);
+        if (paramVar) {
+          this.variables.add(paramVar);
+        }
+      }
+    }
 
-  // Skip if it's a special variable (starts with @) or is "this"
-  if (variable.startsWith("@") || variable === "this") {
-    return null;
+    // Continue traversal to visit nested content
+    super.BlockStatement(block);
   }
+}
 
-  // Handle array access (e.g., items[0] -> items)
-  const arrayMatch = variable.match(/^([a-zA-Z_][a-zA-Z0-9_]*)\[/);
+/**
+ * Extract base variable from bracket notation (e.g., items[0] -> items).
+ * This handles edge cases where templates use bracket notation that's not standard Handlebars syntax.
+ *
+ * Note: Standard Handlebars uses dot notation (items.0) or lookup helper for array access.
+ * This function provides compatibility for non-standard bracket notation.
+ *
+ * @param expr - Expression string that may contain bracket notation
+ * @returns Base variable name or null if not a valid variable
+ *
+ * @example
+ * extractVariableFromBracketNotation("items[0]") // => "items"
+ * extractVariableFromBracketNotation("user.name") // => "user"
+ * extractVariableFromBracketNotation("@index") // => null
+ */
+function extractVariableFromBracketNotation(expr: string): string | null {
+  // Match patterns like items[0] or user[id]
+  const arrayMatch = expr.match(/^([a-zA-Z_][a-zA-Z0-9_]*)\[/);
   if (arrayMatch) {
     return arrayMatch[1];
   }
 
-  // Handle nested properties (e.g., user.profile.name -> user)
-  // Also handles array access in nested properties (e.g., items[0].name -> items)
-  const baseVar = variable.split(/[.[]/)[0];
-  if (baseVar && baseVar !== "this") {
+  // Extract base variable from dotted paths (items.0.name -> items)
+  const baseVar = expr.split(/[.[]/)[0];
+  if (baseVar && baseVar !== "this" && !baseVar.startsWith("@")) {
     return baseVar;
   }
 
@@ -174,12 +225,21 @@ function extractVariableFromExpression(expr: string): string | null {
 }
 
 /**
- * Extract variable names from a template
- * Handles nested properties, array access, helper expressions, and variables in conditionals
+ * Fallback regex-based extraction for templates that don't parse as valid Handlebars.
+ * This handles edge cases like bracket notation (items[0]) that aren't standard Handlebars syntax.
+ *
+ * This fallback is triggered when:
+ * - Templates use bracket notation for array access (e.g., {{items[0]}})
+ * - Other non-standard syntax that Handlebars.parse() rejects
+ *
  * @param templateSource - The template source string
- * @returns Set of variable names found in the template
+ * @returns Set of variable names found using regex patterns
+ *
+ * @example
+ * // Handles bracket notation that would fail AST parsing
+ * extractVariablesFallback("{{items[0].name}}") // => Set { "items" }
  */
-export function extractVariables(templateSource: string): Set<string> {
+function extractVariablesFallback(templateSource: string): Set<string> {
   const variables = new Set<string>();
   const regex = /\{\{([^}]+)\}\}/g;
   let match: RegExpExecArray | null = null;
@@ -188,14 +248,74 @@ export function extractVariables(templateSource: string): Set<string> {
   while ((match = regex.exec(templateSource)) !== null) {
     const content = match[1].trim();
 
-    // Extract variable from the expression
-    const variable = extractVariableFromExpression(content);
-    if (variable) {
-      variables.add(variable);
+    // Skip block helpers and closing tags
+    if (content.startsWith("#") || content.startsWith("/") || content.startsWith("^")) {
+      continue;
+    }
+
+    // Skip partials
+    if (content.startsWith(">")) {
+      continue;
+    }
+
+    // Extract first token (might be helper or variable)
+    const parts = content.split(/\s+/);
+    const firstToken = parts[0];
+
+    // For helpers with arguments (e.g., "currency balance"), extract the argument
+    if (parts.length > 1 && !firstToken.includes(".") && !firstToken.includes("[")) {
+      // First token is likely a helper, extract variable from arguments
+      for (let i = 1; i < parts.length; i++) {
+        const arg = parts[i];
+        // Skip string literals
+        if (
+          (arg.startsWith('"') && arg.endsWith('"')) ||
+          (arg.startsWith("'") && arg.endsWith("'"))
+        ) {
+          continue;
+        }
+        const variable = extractVariableFromBracketNotation(arg);
+        if (variable) {
+          variables.add(variable);
+        }
+      }
+    } else {
+      // Direct variable reference or dotted path
+      const variable = extractVariableFromBracketNotation(firstToken);
+      if (variable) {
+        variables.add(variable);
+      }
     }
   }
 
   return variables;
+}
+
+/**
+ * Extract variable names from a template using Handlebars AST
+ * Handles nested properties, array access, helper expressions, and variables in conditionals
+ * @param templateSource - The template source string
+ * @returns Set of variable names found in the template
+ */
+export function extractVariables(templateSource: string): Set<string> {
+  try {
+    // Parse the template into an AST
+    const ast = Handlebars.parse(templateSource);
+
+    // Create a visitor to extract variables
+    const visitor = new VariableExtractorVisitor();
+
+    // Traverse the AST
+    visitor.accept(ast);
+
+    return visitor.variables;
+  } catch (_error) {
+    // If parsing fails (e.g., due to bracket notation like items[0]), fall back to regex-based extraction
+    // This handles edge cases while still benefiting from AST for valid templates
+    // Note: We don't log the error as invalid syntax is expected for edge cases
+    // The validateTemplate function will properly report actual syntax errors
+    return extractVariablesFallback(templateSource);
+  }
 }
 
 /**
